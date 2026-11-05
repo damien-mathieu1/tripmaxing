@@ -28,6 +28,19 @@ describe("rank", () => {
     expect(rank([famous, gem, stub], 0)[0].title).toBe("famous");
   });
 
+  it("skips dead pages and photo-less places in niche mode", () => {
+    const empty = place("empty", { views: 3, langs: 1, image: null });
+    const alive = place("alive", { views: 120, langs: 2 });
+    const big = place("big", { views: 90000, langs: 60 });
+    expect(rank([empty, alive, big], 1)[0].title).toBe("alive");
+  });
+
+  it("prefers a castle to an ordinary house", () => {
+    const house = place("house", { family: "maison" });
+    const castle = place("castle", { family: "château" });
+    expect(rank([house, castle], 0.5)[0].title).toBe("castle");
+  });
+
   it("does not punish a short article of a rare type", () => {
     const churches = [1, 2, 3, 4, 5].map((n) =>
       place(`church${n}`, {
@@ -96,6 +109,21 @@ describe("planTrip", () => {
   it("offers more suggestions than stops, without a fixed route", () => {
     const days = planTrip(places, { days: 1, stops: 9, minStops: 3, offbeat: 1, suggest: true });
     expect(days[0].stops.length).toBeGreaterThan(3);
+  });
+
+  it("suggests from the richest area, not the first one found", () => {
+    const lonely = place("lonely", { lat: 50, views: 80, langs: 2 });
+    const crowd = Array.from({ length: 10 }, (_, i) =>
+      place(`crowd${i}`, { lat: 45 + i / 1000, family: families[i % 3] }),
+    );
+    const [day] = planTrip([lonely, ...crowd], {
+      days: 1,
+      stops: 8,
+      minStops: 1,
+      offbeat: 1,
+      suggest: true,
+    });
+    expect(day.stops.length).toBeGreaterThan(5);
   });
 
   it("moves to another area when one exists", () => {

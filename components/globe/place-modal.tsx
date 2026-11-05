@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { capitalize } from "@/lib/utils";
 import { HOVER_PHOTO_WIDTH, MODAL_PHOTO_WIDTH } from "./morph";
-import { type Pin, isRising, photoUrl, revealPhoto, wikipediaUrl } from "./pin";
+import { type Pin, isRising, photoUrl, revealPhoto, summaryUrl, wikipediaUrl } from "./pin";
 
 /** Texts stay out of the database: they load from Wikipedia when a place opens. */
 export function PlaceSummary({ pin }: { pin: Pin }) {
@@ -25,10 +25,7 @@ export function PlaceSummary({ pin }: { pin: Pin }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    const title = encodeURIComponent(pin.title.replaceAll(" ", "_"));
-    fetch(`https://${pin.lang}.wikipedia.org/api/rest_v1/page/summary/${title}`, {
-      signal: controller.signal,
-    })
+    fetch(summaryUrl(pin), { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
       .then((page) => setSummary(page?.extract || page?.description || fallback))
       .catch((error) => {

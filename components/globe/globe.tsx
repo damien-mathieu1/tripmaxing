@@ -1,20 +1,22 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { RouteIcon, TrendingUpIcon } from "lucide-react";
+import { BookmarkIcon, RouteIcon, TrendingUpIcon } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SavedTrips } from "@/components/trip/saved-trips";
 import { type PlannerPlace, TripPlanner } from "@/components/trip/trip-planner";
 import { TripPlayer } from "@/components/trip/trip-player";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { MAP_STYLES, type MapStyleId } from "@/lib/map-styles";
+import { MAP_STYLES, type MapStyleId, SATELLITE_TILES } from "@/lib/map-styles";
 import { KIND_IDS, type Kind } from "@/lib/places/kind";
 import { FULL_RANGE } from "@/lib/places/popularity";
 import { km } from "@/lib/trip/plan";
 import { capitalize } from "@/lib/utils";
+import { type SavedTrip, deleteTrip, loadTrips, saveTrip, tileUrls } from "@/lib/trip/saved";
 import type { TripDay } from "@/lib/trip/walking";
 import { FiltersPanel } from "./filters-panel";
 import {
@@ -28,7 +30,7 @@ import {
   tilesUrl,
 } from "./map-layers";
 import { HOVER_PHOTO_WIDTH, MODAL_PHOTO_WIDTH, morph, namePhoto } from "./morph";
-import { type Pin, photoUrl, revealPhoto } from "./pin";
+import { type Pin, photoUrl, revealPhoto, summaryUrl } from "./pin";
 import { PlaceModal } from "./place-modal";
 import { PopularityFilter } from "./popularity-filter";
 import { type Destination, SearchBar } from "./search-bar";
@@ -126,7 +128,9 @@ export function Globe() {
   const overlays = useRef({ borders, filters, layer });
   overlays.current = { borders, filters, layer };
   const [planner, setPlanner] = useState<PlannerPlace | null>(null);
-  const [trip, setTrip] = useState<TripDay[] | null>(null);
+  const [trip, setTrip] = useState<{ days: TripDay[]; name: string; saved: boolean } | null>(null);
+  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(() => loadTrips());
+  const [savedOpen, setSavedOpen] = useState(false);
   const tripActive = useRef(false);
   tripActive.current = trip !== null;
   const destination = useRef<Destination | null>(null);
@@ -333,6 +337,23 @@ export function Globe() {
     mapRef.current?.setStyle(MAP_STYLES[next as MapStyleId].style, { diff: false });
   };
 
+  const saveCurrentTrip = async () => {
+    if (!trip) return;
+    const stops = trip.days.flatMap((day) => day.stops);
+    await saveTrip(
+      { name: trip.name, days: trip.days },
+      {
+        tiles: tileUrls(trip.days, SATELLITE_TILES),
+        photos: stops.flatMap((stop) =>
+          stop.image ? [photoUrl(stop.image, 96), photoUrl(stop.image, 240)] : [],
+        ),
+        texts: stops.map(summaryUrl),
+      },
+    );
+    setSavedTrips(loadTrips());
+    setTrip({ ...trip, saved: true });
+  };
+
   const openPlanner = () => {
     const center = mapRef.current?.getCenter();
     if (!center) return;
@@ -421,11 +442,20 @@ export function Globe() {
           ))}
         </ToggleGroup>
       </FiltersPanel>
-      {!trip && (
-        <div className="trip-cta">
-          <Button onClick={openPlanner}>
-            <RouteIcon />
-            {t("trip.open")}
+      <div className="tool tool-trip">
+        <Button variant="ghost" size="icon" onClick={openPlanner} aria-label={t("trip.open")}>
+          <RouteIcon />
+        </Button>
+      </div>
+      {savedTrips.length > 0 && (
+        <div className="tool tool-saved">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSavedOpen(true)}
+            aria-label={t("trip.mine")}
+          >
+            <BookmarkIcon />
           </Button>
         </div>
       )}
@@ -434,14 +464,38 @@ export function Globe() {
           open
           place={planner}
           onOpenChange={(open) => !open && setPlanner(null)}
-          onReady={(days) => {
+          onReady={(days, name) => {
             setPlanner(null);
-            setTrip(days);
+            setTrip({ days, name, saved: false });
+          }}
+        />
+      )}
+      {savedOpen && (
+        <SavedTrips
+          trips={savedTrips}
+          onOpenChange={setSavedOpen}
+          onOpen={({ days, name }) => {
+            setSavedOpen(false);
+            setTrip({ days, name, saved: true });
+          }}
+          onDelete={async ({ id }) => {
+            await deleteTrip(id);
+            const left = loadTrips();
+            setSavedTrips(left);
+            if (!left.length) setSavedOpen(false);
           }}
         />
       )}
       {trip && mapRef.current && (
-        <TripPlayer map={mapRef.current} days={trip} onClose={() => setTrip(null)} />
+        <TripPlayer
+          key={trip.name}
+          map={mapRef.current}
+          days={trip.days}
+          name={trip.name}
+          saved={trip.saved}
+          onSave={saveCurrentTrip}
+          onClose={() => setTrip(null)}
+        />
       )}
       <PlaceModal pin={selected} onClose={closePlace} />
     </main>

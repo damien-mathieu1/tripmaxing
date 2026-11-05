@@ -58,7 +58,8 @@
     "label": "Rechercher un lieu",
     "placeholder": "Pays, ville, village…",
     "loading": "Recherche en cours",
-    "empty": "Aucun lieu trouvé"
+    "empty": "Aucun lieu trouvé",
+    "open": "Rechercher un lieu"
   },
   "trip": {
     "open": "Créer un voyage",
@@ -98,8 +99,30 @@
     "walkEstimate": "≈ {time} de marche",
     "tooMuch": "au-dessus de ta limite",
     "back": "Retour",
-    "launch": "Lancer le voyage",
+    "launch": "Voir mon voyage",
     "needStops": "Choisis au moins 2 lieux par jour",
-    "suggesting": "Le petit bonhomme cherche des lieux…"
+    "suggesting": "Le petit bonhomme cherche des lieux…",
+    "mine": "Mes voyages",
+    "name": "Voyage à {place}",
+    "begin": "Lancer le voyage interactif",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saved": "Enregistré hors ligne",
+    "savedTitle": "Mes voyages",
+    "savedHelp": "Enregistrés sur cet appareil, disponibles hors ligne.",
+    "delete": "Supprimer {name}",
+    "overview": "{days, plural, one {# jour} other {# jours}} · {stops} lieux · {km} km",
+    "unnamed": "Mon voyage",
+    "typesLabel": "Types de lieux",
+    "types": {
+      "heritage": "Patrimoine",
+      "religious": "Lieux de culte",
+      "museums": "Culture",
+      "nature": "Nature",
+      "history": "Archéologie",
+      "offbeat": "Insolite"
+    },
+    "perimeter": "Périmètre : {km} km autour",
+    "allTypes": "Tous les types si rien n'est choisi"
   }
 }

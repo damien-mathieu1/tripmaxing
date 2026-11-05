@@ -1,3 +1,5 @@
+import { interest } from "./interest.ts";
+
 export type Candidate = {
   id: number;
   title: string;
@@ -12,7 +14,7 @@ export type Candidate = {
   trend: number | null;
 };
 
-const FULL_ARTICLE_BYTES = 5000;
+const STUB_BYTES = 2500;
 
 function percentile<T>(items: T[], value: (item: T) => number) {
   const sorted = items.map(value).sort((a, b) => a - b);
@@ -29,7 +31,10 @@ function percentile<T>(items: T[], value: (item: T) => number) {
   };
 }
 
-/** Best first. offbeat 0 favours famous places, 1 favours rare ones. */
+// Below this many monthly readers, an article is usually too obscure to be worth a visit.
+const ALIVE_VIEWS = 30;
+
+/** Best first. offbeat 0 favours famous places, 1 favours little-known ones that are still alive. */
 export function rank(places: Candidate[], offbeat: number, trending = 0): Candidate[] {
   const counts = new Map<string, number>();
   for (const { family } of places) counts.set(family, (counts.get(family) ?? 0) + 1);
@@ -37,16 +42,23 @@ export function rank(places: Candidate[], offbeat: number, trending = 0): Candid
   const langs = percentile(places, (p) => p.langs);
   const commonness = percentile(places, (p) => counts.get(p.family) ?? 0);
   const momentum = percentile(places, (p) => p.trend ?? 1);
+  // Niche is a sweet spot, not the bottom of the list: the emptiest pages are rarely gems.
+  const target = 1 - 0.7 * offbeat;
 
   const score = (place: Candidate) => {
     const fame = (views(place) + langs(place)) / 2;
-    // A short article can describe a great place: only stubs lose points.
-    const quality = Math.min(1, place.bytes / FULL_ARTICLE_BYTES) * (place.image ? 1 : 0.6);
+    const fit = 1 - Math.abs(fame - target) * 1.6;
+    const alive = Math.min(1, place.views / ALIVE_VIEWS);
+    // Size is only known once the refresh job has reached an article.
+    const stub = place.bytes > 0 && place.bytes < STUB_BYTES ? 0.3 : 0;
     return (
-      quality +
-      offbeat * (2 - fame - commonness(place)) +
-      (1 - offbeat) * fame +
-      trending * momentum(place)
+      1.2 * interest(place.family) +
+      1.2 * fit +
+      0.6 * alive +
+      (place.image ? 0.5 : 0) +
+      0.4 * offbeat * (1 - commonness(place)) +
+      trending * momentum(place) -
+      stub
     );
   };
   return places

@@ -1,5 +1,8 @@
 import type { StyleSpecification } from "maplibre-gl";
 
+export const SATELLITE_TILES =
+  "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg";
+
 const raster = (tiles: string[], attribution: string, maxzoom: number): StyleSpecification => ({
   version: 8,
   projection: { type: "globe" },
@@ -16,7 +19,7 @@ export const MAP_STYLES = {
   satellite: {
     borderColor: "#ffffff",
     style: raster(
-      ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg"],
+      [SATELLITE_TILES],
       '<a href="https://s2maps.eu">Sentinel-2 cloudless</a> by EOX (Copernicus Sentinel data 2020)',
       14,
     ),

@@ -1,4 +1,7 @@
-const CACHE = "wikitrip-v1";
+const CACHE = "wikitrip-v2";
+const TRIP_CACHES = "wikitrip-trip-";
+// Hosts of what a saved trip stores: base map tiles, photos and summaries.
+const TRIP_HOSTS = /(^|\.)(maps\.eox\.at|wikimedia\.org|wikipedia\.org)$/;
 const MAX_TILES = 800;
 
 self.addEventListener("install", (event) => {
@@ -11,7 +14,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))),
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE && !key.startsWith(TRIP_CACHES))
+            .map((key) => caches.delete(key)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -57,7 +64,13 @@ async function networkFirst(request) {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (request.method !== "GET") return;
+  if (url.origin !== self.location.origin) {
+    if (TRIP_HOSTS.test(url.hostname)) {
+      event.respondWith(caches.match(request).then((saved) => saved ?? fetch(request)));
+    }
+    return;
+  }
   if (url.pathname.startsWith("/api/tiles/")) event.respondWith(staleWhileRevalidate(event));
   else if (url.pathname.startsWith("/api/")) return;
   else if (request.mode === "navigate") event.respondWith(networkFirst(request));

@@ -1,9 +1,16 @@
 "use client";
 
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
+import {
+  BookmarkCheckIcon,
+  BookmarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlayIcon,
+  XIcon,
+} from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type Coordinate, lengthKm, pointAlong, sliceAlong } from "@/lib/trip/path";
@@ -21,7 +28,8 @@ const MIN_WALK_MS = 3500;
 const MAX_WALK_MS = 11000;
 // Share of the arc where the camera leans towards the middle of the leg rather than the walker.
 const CAMERA_LEAD = 0.75;
-const TRIP_PADDING = { top: 70, bottom: 260, left: 40, right: 40 };
+const TRIP_PADDING = { top: 70, left: 40, right: 40 };
+const CARD_GAP_PX = 40;
 const DIMMED_PINS = 0.3;
 
 const lerp = (from: number, to: number, amount: number) => from + (to - from) * amount;
@@ -60,11 +68,11 @@ function animate(durationMs: number, frame: (progress: number) => void, stale: (
 }
 
 function drawRoute(map: maplibregl.Map, day: TripDay) {
-  for (const id of ["trip-walked", "trip-route", "trip-route-glow"]) {
-    if (map.getLayer(id)) map.removeLayer(id);
-  }
-  for (const id of ["trip-path", "trip-progress"]) {
-    if (map.getSource(id)) map.removeSource(id);
+  const path = map.getSource<maplibregl.GeoJSONSource>("trip-path");
+  if (path) {
+    // Already on the map: a new day only needs new data.
+    path.setData(emptyLine(day.legs.flat()));
+    return;
   }
   map.addSource("trip-path", { type: "geojson", data: emptyLine(day.legs.flat()) });
   map.addSource("trip-progress", {
@@ -139,15 +147,21 @@ function stopMarker(day: TripDay, index: number, onClick: () => void) {
 type Props = {
   map: maplibregl.Map;
   days: TripDay[];
+  name: string;
+  saved: boolean;
+  onSave: () => Promise<void>;
   onClose: () => void;
 };
 
-export function TripPlayer({ map, days, onClose }: Props) {
+export function TripPlayer({ map, days, name, saved, onSave, onClose }: Props) {
   const t = useTranslations("trip");
   const [dayIndex, setDayIndex] = useState(0);
   const [stopIndex, setStopIndex] = useState(0);
   const [walking, setWalking] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [saving, setSaving] = useState(false);
   const run = useRef(0);
+  const card = useRef<HTMLElement>(null);
   const walker = useRef<maplibregl.Marker | null>(null);
   const stopRef = useRef(0);
   const markers = useRef<maplibregl.Marker[]>([]);
@@ -249,12 +263,12 @@ export function TripPlayer({ map, days, onClose }: Props) {
   walkToRef.current = walkTo;
 
   // Runs before the first flight below: setPadding stops any camera move in progress.
-  useEffect(() => {
-    map.setPadding(TRIP_PADDING);
-    return () => {
-      map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
-    };
-  }, [map]);
+  useLayoutEffect(() => {
+    const bottom = (card.current?.offsetHeight ?? 0) + CARD_GAP_PX;
+    map.setPadding({ ...TRIP_PADDING, bottom });
+  }, [map, started, dayIndex]);
+
+  useEffect(() => () => void map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }), [map]);
 
   // Draws the day, and again after a base map change wipes the layers.
   useEffect(() => {
@@ -274,17 +288,31 @@ export function TripPlayer({ map, days, onClose }: Props) {
     const first = day.stops[0];
     markers.current = day.stops.map((place, index) =>
       new maplibregl.Marker({
-        element: stopMarker(day, index, () => void walkToRef.current(index)),
+        element: stopMarker(day, index, () => {
+          if (started) void walkToRef.current(index);
+        }),
       })
         .setLngLat([place.lon, place.lat])
         .addTo(map),
     );
-    walker.current = new maplibregl.Marker({ element: walkerElement(), anchor: "bottom" })
-      .setLngLat([first.lon, first.lat])
-      .addTo(map);
     activate(0);
     run.current++;
     setWalking(false);
+    if (!started) {
+      // Overview first: the whole day at a glance, nothing moves until asked.
+      const bounds = new maplibregl.LngLatBounds();
+      for (const place of day.stops) bounds.extend([place.lon, place.lat]);
+      for (const coordinate of day.legs.flat()) bounds.extend(coordinate);
+      map.fitBounds(bounds, { maxZoom: 15, duration: 1800, essential: true });
+      return () => {
+        map.off("style.load", draw);
+        run.current++;
+        for (const marker of markers.current) marker.remove();
+      };
+    }
+    walker.current = new maplibregl.Marker({ element: walkerElement(), anchor: "bottom" })
+      .setLngLat([first.lon, first.lat])
+      .addTo(map);
     map.flyTo({
       center: [first.lon, first.lat],
       zoom: STOP_ZOOM,
@@ -298,7 +326,7 @@ export function TripPlayer({ map, days, onClose }: Props) {
       for (const marker of markers.current) marker.remove();
       walker.current?.remove();
     };
-  }, [activate, day, map, showProgress]);
+  }, [activate, day, map, showProgress, started]);
 
   useEffect(
     () => () => {
@@ -320,27 +348,76 @@ export function TripPlayer({ map, days, onClose }: Props) {
     image: stop.image ?? undefined,
   };
 
+  const dayTabs = days.length > 1 && (
+    <ToggleGroup
+      type="single"
+      size="sm"
+      value={String(dayIndex)}
+      onValueChange={(value) => value && setDayIndex(Number(value))}
+      aria-label={t("title")}
+      className="flex-wrap"
+    >
+      {days.map((_, index) => (
+        <ToggleGroupItem key={index} value={String(index)}>
+          {t("day", { day: index + 1 })}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  );
+
+  if (!started) {
+    const save = async () => {
+      setSaving(true);
+      await onSave();
+      setSaving(false);
+    };
+    return (
+      <section ref={card} className="trip-card" aria-label={name}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="truncate font-medium">{name}</h2>
+            <p className="text-xs text-muted-foreground">
+              {t("overview", {
+                days: days.length,
+                stops: days.reduce((total, plan) => total + plan.stops.length, 0),
+                km: days
+                  .reduce((total, plan) => total + plan.km, 0)
+                  .toFixed(1)
+                  .replace(".", ","),
+              })}
+            </p>
+          </div>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t("close")}>
+            <XIcon />
+          </Button>
+        </div>
+        {dayTabs}
+        <ol className="trip-list">
+          {day.stops.map((place, index) => (
+            <li key={place.id}>
+              <span>{index + 1}</span>
+              {capitalize(place.title)}
+            </li>
+          ))}
+        </ol>
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" onClick={save} disabled={saved || saving}>
+            {saved ? <BookmarkCheckIcon /> : <BookmarkIcon />}
+            {saved ? t("saved") : saving ? t("saving") : t("save")}
+          </Button>
+          <Button onClick={() => setStarted(true)}>
+            <PlayIcon />
+            {t("begin")}
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="trip-card" aria-label={t("title")}>
+    <section ref={card} className="trip-card" aria-label={t("title")}>
       <div className="flex items-center justify-between gap-2">
-        {days.length > 1 ? (
-          <ToggleGroup
-            type="single"
-            size="sm"
-            value={String(dayIndex)}
-            onValueChange={(value) => value && setDayIndex(Number(value))}
-            aria-label={t("title")}
-            className="flex-wrap"
-          >
-            {days.map((_, index) => (
-              <ToggleGroupItem key={index} value={String(index)}>
-                {t("day", { day: index + 1 })}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        ) : (
-          <span />
-        )}
+        {dayTabs || <span />}
         <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t("close")}>
           <XIcon />
         </Button>

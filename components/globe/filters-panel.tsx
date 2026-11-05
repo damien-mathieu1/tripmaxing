@@ -17,11 +17,21 @@ export function FiltersPanel({ open, activeCount, onToggle, children }: Props) {
   const t = useTranslations("filters");
   return (
     <section className="filters" data-open={open} aria-label={t("label")}>
-      <Button variant="ghost" size="sm" onClick={onToggle} aria-expanded={open}>
+      <Button
+        variant="ghost"
+        size={open ? "sm" : "icon"}
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={t("open")}
+      >
         <SlidersHorizontalIcon />
-        {t("open")}
-        {activeCount > 0 && <Badge>{activeCount}</Badge>}
+        {open && t("open")}
       </Button>
+      {activeCount > 0 && (
+        <span className="filters-count">
+          <Badge>{activeCount}</Badge>
+        </span>
+      )}
       <div className="filters-body">
         <div className="filters-content" inert={!open}>
           {children}

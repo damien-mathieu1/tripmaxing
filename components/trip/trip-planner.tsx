@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { tripRadiusKm } from "@/lib/places/search";
+import { PERIMETERS_KM, nearestPerimeter, tripRadiusKm } from "@/lib/places/search";
+import { TRIP_TYPE_IDS, type TripType } from "@/lib/trip/interest";
 import { order, walkMinutes } from "@/lib/trip/plan";
 import type { Candidate } from "@/lib/trip/score";
 import { type TripDay, walkDay } from "@/lib/trip/walking";
@@ -31,7 +32,7 @@ type Props = {
   open: boolean;
   place: PlannerPlace;
   onOpenChange: (open: boolean) => void;
-  onReady: (days: TripDay[]) => void;
+  onReady: (days: TripDay[], name: string) => void;
 };
 
 type Step = "settings" | "suggesting" | "pick" | "routing";
@@ -87,6 +88,10 @@ export function TripPlanner({ open, place: initialPlace, onOpenChange, onReady }
   const [stops, setStops] = useState(5);
   const [offbeat, setOffbeat] = useState<number>(STYLES.mixed);
   const [maxWalk, setMaxWalk] = useState(120);
+  const [types, setTypes] = useState<TripType[]>([]);
+  const [perimeter, setPerimeter] = useState(() =>
+    nearestPerimeter(tripRadiusKm(initialPlace.zoom, 2)),
+  );
   const [step, setStep] = useState<Step>("settings");
   const [problem, setProblem] = useState<"empty" | "error" | null>(null);
   const [suggestions, setSuggestions] = useState<Candidate[][]>([]);
@@ -108,9 +113,10 @@ export function TripPlanner({ open, place: initialPlace, onOpenChange, onReady }
       stops: String(stops),
       offbeat: String(offbeat),
       maxWalkMinutes: String(maxWalk),
-      radiusKm: String(tripRadiusKm(place.zoom, days)),
+      radiusKm: String(PERIMETERS_KM[perimeter]),
       suggest: "1",
     });
+    if (types.length) query.set("types", types.join(","));
     try {
       const response = await fetch(`/api/trips?${query}`);
       if (!response.ok) throw new Error(String(response.status));
@@ -132,7 +138,8 @@ export function TripPlanner({ open, place: initialPlace, onOpenChange, onReady }
 
   const launch = async () => {
     setStep("routing");
-    onReady(await Promise.all(picked.map((list) => walkDay(order(list)))));
+    const walked = await Promise.all(picked.map((list) => walkDay(order(list))));
+    onReady(walked, place.label ? t("name", { place: place.label }) : t("unnamed"));
   };
 
   const toggle = (id: number) => {
@@ -145,6 +152,7 @@ export function TripPlanner({ open, place: initialPlace, onOpenChange, onReady }
 
   const pickPlace = (destination: Destination) => {
     setPlace(destination);
+    setPerimeter(nearestPerimeter(tripRadiusKm(destination.zoom, days)));
     setSearching(false);
   };
 
@@ -187,6 +195,17 @@ export function TripPlanner({ open, place: initialPlace, onOpenChange, onReady }
                 </div>
               )}
             </div>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm">{t("perimeter", { km: PERIMETERS_KM[perimeter] })}</span>
+              <Slider
+                min={0}
+                max={PERIMETERS_KM.length - 1}
+                step={1}
+                value={[perimeter]}
+                onValueChange={([value]) => setPerimeter(value)}
+                aria-label={t("perimeter", { km: PERIMETERS_KM[perimeter] })}
+              />
+            </label>
             <label className="flex flex-col gap-2">
               <span className="text-sm">{t("days", { count: days })}</span>
               <Slider
@@ -243,6 +262,24 @@ export function TripPlanner({ open, place: initialPlace, onOpenChange, onReady }
                 onValueChange={([value]) => setOffbeat(value)}
                 aria-label={t("styleSlider")}
               />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm">{t("typesLabel")}</span>
+              <ToggleGroup
+                type="multiple"
+                size="sm"
+                value={types}
+                onValueChange={(next) => setTypes(next as TripType[])}
+                aria-label={t("typesLabel")}
+                className="flex-wrap"
+              >
+                {TRIP_TYPE_IDS.map((id) => (
+                  <ToggleGroupItem key={id} value={id}>
+                    {t(`types.${id}`)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <small className="text-muted-foreground">{t("allTypes")}</small>
             </div>
             {problem && (
               <p className="text-sm text-muted-foreground" role="alert">

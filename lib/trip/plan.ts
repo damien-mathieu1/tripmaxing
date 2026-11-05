@@ -20,6 +20,10 @@ const WALK_KMH = 4.5;
 const VISIT_MINUTES = 30;
 const MAX_PER_FAMILY = 2;
 const POOL_PER_STOP = 8;
+// Starting points compared when looking for the richest area of a day.
+const SEED_TRIES = 60;
+const SUGGESTION_RADIUS_FACTOR = 2;
+const MIN_SUGGESTION_RADIUS_KM = 3;
 
 export function km(a: Point, b: Point) {
   const rad = Math.PI / 180;
@@ -97,17 +101,32 @@ export function planTrip(places: Candidate[], options: TripOptions) {
   const {
     dayRadiusKm = Math.min(3, Math.max(0.8, Number.isFinite(walkRadiusKm) ? walkRadiusKm : 1.5)),
   } = options;
-  let pool = rank(places, offbeat, trending).slice(0, days * stops * POOL_PER_STOP);
+  const ranked = rank(places, offbeat, trending);
+  // Suggestions cast a wider net: the user picks, then the walk limit is checked on the picks.
+  let pool = suggest ? ranked : ranked.slice(0, days * stops * POOL_PER_STOP);
+  const radiusKm = suggest
+    ? Math.max(MIN_SUGGESTION_RADIUS_KM, dayRadiusKm * SUGGESTION_RADIUS_FACTOR)
+    : dayRadiusKm;
   const seeds: Candidate[] = [];
   const trip: Candidate[][] = [];
 
   for (let n = 0; n < days; n++) {
-    const fill = (seed: Candidate) => pickDay(seed, pool, stops, dayRadiusKm);
-    const apart = (seed: Candidate) => seeds.every((other) => km(seed, other) > dayRadiusKm);
+    const fill = (seed: Candidate) => pickDay(seed, pool, stops, radiusKm);
+    const apart = (seed: Candidate) => seeds.every((other) => km(seed, other) > radiusKm);
     // Prefer a new area each day, reuse a nearby one rather than dropping a day.
-    const seed =
-      pool.find((p) => apart(p) && fill(p).length >= minStops) ??
-      pool.find((p) => fill(p).length >= minStops);
+    const richest = (seeds: Candidate[]) =>
+      seeds
+        .slice(0, SEED_TRIES)
+        .map((seed) => ({ seed, size: fill(seed).length }))
+        .filter(({ size }) => size >= minStops)
+        .reduce<{ seed: Candidate; size: number } | null>(
+          (best, option) => (!best || option.size > best.size ? option : best),
+          null,
+        )?.seed;
+    const seed = suggest
+      ? (richest(pool.filter(apart)) ?? richest(pool))
+      : (pool.find((p) => apart(p) && fill(p).length >= minStops) ??
+        pool.find((p) => fill(p).length >= minStops));
     if (!seed) break;
     const day = suggest ? fill(seed) : fitWalk(order(fill(seed)), maxWalkMinutes);
     seeds.push(seed);

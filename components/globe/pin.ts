@@ -17,6 +17,9 @@ export const isRising = ({ trend, views }: Pin) =>
 export const photoUrl = (image: string, width: number) =>
   `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(image)}?width=${width}`;
 
+export const summaryUrl = ({ lang, title }: { lang: string; title: string }) =>
+  `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replaceAll(" ", "_"))}`;
+
 export const wikipediaUrl = ({ lang, title }: Pin) =>
   `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replaceAll(" ", "_"))}`;
 

@@ -1,7 +1,9 @@
 "use client";
 
+import { SearchIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Command, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { type SearchHit, toHits, zoomFor } from "@/lib/places/search";
 import { capitalize } from "@/lib/utils";
@@ -117,9 +119,39 @@ export function PlaceSearch({ onPick, onActive }: PlaceSearchProps) {
 }
 
 export function SearchBar({ onPick }: { onPick: (destination: Destination) => void }) {
+  const t = useTranslations("search");
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    root.current?.querySelector("input")?.focus();
+    const close = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
   return (
-    <div className="search">
-      <PlaceSearch onPick={onPick} />
+    <div
+      ref={root}
+      className="search"
+      data-open={open}
+      onKeyDown={(event) => event.key === "Escape" && setOpen(false)}
+    >
+      {open ? (
+        <PlaceSearch
+          onPick={(place) => {
+            setOpen(false);
+            onPick(place);
+          }}
+        />
+      ) : (
+        <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label={t("open")}>
+          <SearchIcon />
+        </Button>
+      )}
     </div>
   );
 }

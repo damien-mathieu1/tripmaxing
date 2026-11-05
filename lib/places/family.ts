@@ -6,14 +6,14 @@ const PLACE = new RegExp(
       "maison|villa|hôtel particulier|usine|grenier|atelier|théâtre|tour|aqueduc|amphithéâtre|palais",
       "place|rue piétonne|ruines?|traboule|fresque|cour d'immeuble|temple|sanctuaire|mosquée|synagogue|moulin|phare",
       "church|chapel|basilica|cathedral|abbey|convent|monastery|museum|garden|park|bridge|castle|archaeological site",
-      "memorial|fountain|gallery|stairway|cemetery|house|mansion|factory|theatre|theater|aqueduct|palace|square|shrine",
+      "memorial|fountain|gallery|stairway|cemetery|house|mansion|factory|theatre|theater|aqueduct|square|shrine",
       "mosque|mill|lighthouse|tower|dolmen|menhir",
     ].join("|") +
     ")(?![\\p{L}])",
   "iu",
 );
 const NOT_PLACE =
-  /stationnement|commercial|exposition|d'art contemporain|maison d'édition|parking|shopping|publishing/i;
+  /stationnement|commercial|exposition|d'art contemporain|galerie d'art|art gallery|maison d'édition|magasin|hôtel de luxe|parking|shopping|publishing/i;
 const DESTROYED = "Q19860854";
 
 // Labels are French, then English when Wikidata has no French label.

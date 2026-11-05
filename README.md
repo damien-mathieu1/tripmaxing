@@ -25,11 +25,11 @@ Open http://localhost:3100. The seed loads Lyon, so you get pins without calling
 
 ## Data pipeline
 
-| Command                         | Job                                                                                       | Speed             |
-| ------------------------------- | ----------------------------------------------------------------------------------------- | ----------------- |
-| `pnpm import:places`            | Every geolocated article of `WIKI_LANGS`, from QLever (a fast public Wikidata endpoint).  | A few minutes     |
-| `pnpm import:views [new] [old]` | Views and trends for every place, streamed from monthly Wikimedia dumps. Nothing on disk. | About an hour     |
-| `/api/cron/refresh`             | Walks the table by id for fresher views, images and article sizes, then starts over.      | ~350 per 45 s run |
+| Command                         | Job                                                                                                    | Speed             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
+| `pnpm import:places`            | Every geolocated article of `WIKI_LANGS`, from QLever (a fast public Wikidata endpoint), area by area. | A few minutes     |
+| `pnpm import:views [new] [old]` | Views and trends for every place, streamed from monthly Wikimedia dumps. Nothing on disk.              | About an hour     |
+| `/api/cron/refresh`             | Walks the table by id for fresher views, images and article sizes, then starts over.                   | ~350 per 45 s run |
 
 `.github/workflows/import.yml` runs both imports monthly. `.github/workflows/cron.yml` calls the refresh every 15 minutes.
 

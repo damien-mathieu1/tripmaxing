@@ -20,6 +20,16 @@ export function tripRadiusKm(zoom: number, days: number) {
   return 6 + days * 2;
 }
 
+// Slider stops: fine steps for a town, big ones for a country.
+export const PERIMETERS_KM = [1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 80, 100, 150, 200, 300, 400];
+
+export const nearestPerimeter = (km: number) =>
+  PERIMETERS_KM.reduce(
+    (best, value, index) =>
+      Math.abs(value - km) < Math.abs(PERIMETERS_KM[best] - km) ? index : best,
+    0,
+  );
+
 type WikidataHit = { id: string; label?: string; description?: string };
 
 export function toHits(results: WikidataHit[]): SearchHit[] {

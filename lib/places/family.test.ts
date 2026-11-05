@@ -16,4 +16,6 @@ it("rejects destroyed and non visitable places", () => {
   expect(familyOf({ Q1: "musée", Q19860854: "bâtiment détruit" })).toBeNull();
   expect(familyOf({ Q1: "parc de stationnement" })).toBeNull();
   expect(familyOf({ Q1: "rue" })).toBeNull();
+  expect(familyOf({ Q1: "magasin phare" })).toBeNull();
+  expect(familyOf({ Q1: "galerie d'art" })).toBeNull();
 });
