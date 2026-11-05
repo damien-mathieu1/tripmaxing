@@ -2,7 +2,7 @@
 
 Every geolocated Wikipedia article on a zoomable globe, and a trip engine that favours offbeat places.
 
-**Try it: [tripmaxing.vercel.app](https://tripmaxing.vercel.app)**
+**Try it: [tripmaxing.dmathieu.dev](https://tripmaxing.dmathieu.dev)**
 
 ![tripmaxing demo: searching Lyon on the globe, opening a place, then planning a trip and following the walker along real footpaths](docs/demo.gif)
 
