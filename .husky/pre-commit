@@ -1,0 +1,10 @@
+staged_file() { git diff --cached --name-only | grep -qE "(^|/)$1\$"; }
+
+if staged_file "package\.json" || staged_file "pnpm-lock\.yaml"; then
+  pnpm audit --audit-level=critical
+fi
+
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm exec lint-staged

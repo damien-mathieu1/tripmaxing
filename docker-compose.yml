@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    # The official image has no arm64 build.
+    platform: linux/amd64
+    environment:
+      POSTGRES_USER: wikitrip
+      POSTGRES_PASSWORD: wikitrip
+      POSTGRES_DB: wikitrip
+    ports:
+      - "5433:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:

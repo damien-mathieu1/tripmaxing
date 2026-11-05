@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "title": "wikitrip",
+    "description": "Tous les lieux de Wikipédia sur un globe"
+  },
+  "map": {
+    "label": "Globe des articles Wikipédia",
+    "styles": {
+      "label": "Fond de carte",
+      "satellite": "Satellite",
+      "roads": "Routes",
+      "topo": "Topographie"
+    },
+    "borders": {
+      "label": "Limites administratives",
+      "countries": "Frontières",
+      "regions": "Régions",
+      "departments": "Départements"
+    }
+  },
+  "filters": {
+    "label": "Filtres de la carte",
+    "open": "Filtres",
+    "trending": "Tendances",
+    "trendingLabel": "Afficher seulement les articles en hausse",
+    "kindsLabel": "Types de lieux",
+    "kinds": {
+      "monument": "Monuments",
+      "museum": "Musées",
+      "city": "Villes",
+      "nature": "Nature",
+      "event": "Événements",
+      "transport": "Transports",
+      "other": "Autres"
+    }
+  },
+  "popularity": {
+    "sliderLabel": "Popularité en vues",
+    "presetsLabel": "Niveau de popularité",
+    "all": "Toutes les popularités en 30 jours",
+    "upTo": "Jusqu'à {max, number} vues en 30 jours",
+    "from": "{min, number} vues et plus en 30 jours",
+    "between": "{min, number} à {max, number} vues en 30 jours",
+    "presets": {
+      "niche": "Niche",
+      "moderate": "Modéré",
+      "touristy": "Touristique"
+    }
+  },
+  "place": {
+    "fallback": "Article Wikipédia",
+    "loading": "Chargement de la description",
+    "views": "{views, number} vues en 30 jours",
+    "rising": "En hausse",
+    "read": "Lire sur Wikipédia"
+  }
+}

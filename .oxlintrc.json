@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/crates/oxc_linter/src/rules.rs",
+  "env": { "browser": true, "node": true, "es2022": true },
+  "ignorePatterns": ["poc/**"],
+  "jsPlugins": ["@shadcn/lint"],
+  "settings": {
+    "shadcn": {
+      "ui": "@/components/ui",
+      "componentImports": ["^@/components/ui/"]
+    }
+  },
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }
+    ],
+    "no-non-null-asserted-optional-chain": "error",
+    "unicorn/no-useless-length-check": "error",
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          {
+            "pattern": "^(DialogContent|DialogTitle|DialogHeader)$",
+            "allow": ["layout", "spacing", "typography"]
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [{ "files": ["components/ui/**"], "rules": { "shadcn/no-restyle": "off" } }]
+}

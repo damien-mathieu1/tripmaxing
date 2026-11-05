@@ -1,0 +1,22 @@
+name: Data refresh
+
+# Vercel Hobby crons run daily at most: this keeps data moving every 15 minutes.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    name: Call cron endpoints
+    runs-on: ubuntu-latest
+    if: vars.APP_URL != ''
+    steps:
+      - name: Refresh
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS --max-time 70 -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/refresh"

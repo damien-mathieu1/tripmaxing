@@ -1,0 +1,519 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+.photo-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 10px;
+  cursor: pointer;
+}
+
+.photo-pin img {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  object-fit: cover;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 45%);
+}
+
+.photo-pin span {
+  max-width: 120px;
+  overflow: hidden;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 65%);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pointer events stay on the map layer, so moving off the pin closes the card. */
+.pin-hover {
+  pointer-events: none;
+}
+
+.pin-hover > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform-origin: bottom center;
+  animation: pin-grow 160ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.pin-hover-bubble {
+  position: relative;
+  order: 1;
+  width: 76px;
+  height: 76px;
+  overflow: visible;
+  border: 3px solid #fff;
+  border-radius: 9999px;
+  background: #e11d48;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 45%);
+}
+
+.pin-hover-bubble::after {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  border-width: 12px 9px 0;
+  border-style: solid;
+  border-color: #fff transparent transparent;
+  content: "";
+  transform: translateX(-50%);
+}
+
+.pin-hover-bubble img {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.pin-hover span {
+  max-width: 200px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 75%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.pin-hover > div {
+  padding-bottom: 14px;
+}
+
+@keyframes pin-grow {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-hover > div {
+    animation: none;
+  }
+}
+
+/* Pin to modal morph: the photo flies on its own layer while the card opens around it. */
+[data-slot="dialog-content"] {
+  view-transition-name: place-card;
+}
+
+.place-modal-photo {
+  view-transition-name: place-photo;
+  background-position: center;
+  background-size: cover;
+}
+
+[data-slot="dialog-content"] [data-slot="dialog-close"] {
+  background: rgb(255 255 255 / 85%);
+}
+
+/* The transition animates the card: its own animation would delay unmounting on close. */
+@supports (view-transition-name: none) {
+  [data-slot="dialog-content"] {
+    animation: none !important;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(place-photo) {
+  z-index: 2;
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-image-pair(place-photo) {
+  overflow: hidden;
+}
+
+::view-transition-old(place-photo),
+::view-transition-new(place-photo) {
+  width: 100%;
+  height: 100%;
+  animation-duration: 240ms;
+  object-fit: cover;
+}
+
+html[data-morph="open"]::view-transition-image-pair(place-photo) {
+  animation: photo-square 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html[data-morph="close"]::view-transition-image-pair(place-photo) {
+  animation: photo-round 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+::view-transition-group(place-card) {
+  animation-duration: 420ms;
+}
+
+::view-transition-new(place-card) {
+  animation: card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+::view-transition-old(place-card) {
+  animation: card-out 240ms ease-in both;
+}
+
+@keyframes photo-square {
+  from {
+    border-radius: 50%;
+  }
+
+  to {
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+@keyframes photo-round {
+  from {
+    border-radius: 12px 12px 0 0;
+  }
+
+  to {
+    border-radius: 50%;
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+}
+
+@keyframes card-out {
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+/* App shell: the map owns every gesture, the page never scrolls or bounces. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stars,
+.stars::after {
+  position: absolute;
+  inset: 0;
+  background-image: var(--stars);
+  background-position: var(--stars-position, 0 0);
+  background-size: 1024px;
+}
+
+.stars::after {
+  background-size: 640px;
+  content: "";
+  opacity: 0.6;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+
+.maplibregl-map {
+  background: transparent;
+}
+
+@keyframes twinkle {
+  to {
+    opacity: 0.2;
+  }
+}
+
+/* Filters: a small pill that grows into the full panel. */
+.filters {
+  --spring: cubic-bezier(0.3, 1.35, 0.5, 1);
+  --accent-pin: #e11d48;
+  position: absolute;
+  top: calc(1rem + env(safe-area-inset-top));
+  left: calc(1rem + env(safe-area-inset-left));
+  overflow: hidden;
+  width: 7.25rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.25rem;
+  border-radius: 1.1rem;
+  background: color-mix(in oklab, var(--background) 92%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 35%);
+  touch-action: manipulation;
+  user-select: none;
+  transition:
+    width 340ms var(--spring),
+    border-radius 300ms ease;
+}
+
+.filters[data-open="true"] {
+  width: 27rem;
+  border-radius: 1rem;
+}
+
+.filters-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.filters[data-open="true"] .filters-body {
+  grid-template-rows: 1fr;
+}
+
+.filters-content {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.filters[data-open="true"] .filters-content {
+  max-height: calc(100dvh - 7rem);
+  overflow: hidden auto;
+  padding: 0.35rem 0.25rem 0.35rem;
+}
+
+.filters-content > * {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 180ms ease,
+    transform 300ms var(--spring);
+}
+
+.filters[data-open="true"] .filters-content > * {
+  opacity: 1;
+  transform: none;
+}
+
+.filters[data-open="true"] .filters-content > :nth-child(2) {
+  transition-delay: 35ms;
+}
+
+.filters[data-open="true"] .filters-content > :nth-child(3) {
+  transition-delay: 70ms;
+}
+
+.filters[data-open="true"] .filters-content > :nth-child(4) {
+  transition-delay: 105ms;
+}
+
+.filters[data-open="true"] .filters-content > :nth-child(5) {
+  transition-delay: 140ms;
+}
+
+/* Selection: pressing sinks the chip, turning it on pops it with the pin colour. */
+.filters [data-slot="toggle-group-item"],
+.filters [data-slot="toggle"] {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 220ms var(--spring),
+    box-shadow 180ms ease;
+}
+
+.filters [data-slot="toggle-group-item"]:active,
+.filters [data-slot="toggle"]:active {
+  transform: scale(0.92);
+}
+
+.filters [data-slot="toggle-group-item"][data-state="on"],
+.filters [data-slot="toggle"][data-state="on"] {
+  background: var(--accent-pin);
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--accent-pin) 45%, transparent);
+  color: #fff;
+  animation: chip-pop 280ms var(--spring);
+}
+
+@keyframes chip-pop {
+  from {
+    transform: scale(0.86);
+  }
+}
+
+/* Slider: thumbs glide to presets, follow the finger exactly while dragging. */
+.popularity [data-slot="slider-range"] {
+  background: var(--accent-pin);
+}
+
+.popularity[data-dragging="false"] [data-slot="slider-range"],
+.popularity[data-dragging="false"] [data-slot="slider"] span:has(> [data-slot="slider-thumb"]) {
+  transition:
+    left 320ms var(--spring),
+    right 320ms var(--spring);
+}
+
+.popularity [data-slot="slider-thumb"] {
+  position: relative;
+  border-color: var(--accent-pin);
+  transition:
+    transform 200ms var(--spring),
+    box-shadow 200ms ease;
+}
+
+/* A bigger target than the visible thumb, for fingers. */
+.popularity [data-slot="slider-thumb"]::after {
+  position: absolute;
+  inset: -14px;
+  content: "";
+}
+
+.popularity [data-slot="slider-thumb"]:hover {
+  transform: scale(1.2);
+}
+
+.popularity [data-slot="slider-thumb"]:active {
+  box-shadow: 0 0 0 7px color-mix(in oklab, var(--accent-pin) 22%, transparent);
+  transform: scale(1.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filters,
+  .filters *,
+  .stars::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

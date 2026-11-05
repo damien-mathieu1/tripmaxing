@@ -1,0 +1,94 @@
+"use client";
+
+import { ExternalLinkIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { HOVER_PHOTO_WIDTH, MODAL_PHOTO_WIDTH } from "./morph";
+import { type Pin, isRising, photoUrl, wikipediaUrl } from "./pin";
+
+/** Texts stay out of the database: they load from Wikipedia when a place opens. */
+function PlaceSummary({ pin }: { pin: Pin }) {
+  const t = useTranslations("place");
+  const [summary, setSummary] = useState<string | null>(null);
+  const fallback = t("fallback");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const title = encodeURIComponent(pin.title.replaceAll(" ", "_"));
+    fetch(`https://${pin.lang}.wikipedia.org/api/rest_v1/page/summary/${title}`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((page) => setSummary(page?.extract || page?.description || fallback))
+      .catch((error) => {
+        if (error.name !== "AbortError") setSummary(fallback);
+      });
+    return () => controller.abort();
+  }, [pin, fallback]);
+
+  if (summary === null) {
+    return (
+      <div className="flex flex-col gap-2" aria-label={t("loading")}>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+      </div>
+    );
+  }
+  return (
+    <div className="line-clamp-5">
+      <DialogDescription>{summary}</DialogDescription>
+    </div>
+  );
+}
+
+export function PlaceModal({ pin, onClose }: { pin: Pin | null; onClose: () => void }) {
+  const t = useTranslations("place");
+  return (
+    <Dialog open={pin !== null} onOpenChange={(open) => !open && onClose()}>
+      {pin && (
+        <DialogContent
+          aria-describedby={undefined}
+          className="gap-0 overflow-hidden p-0 sm:max-w-lg"
+        >
+          {pin.image && (
+            // oxlint-disable-next-line nextjs/no-img-element -- Commons already serves resized images
+            <img
+              src={photoUrl(pin.image, MODAL_PHOTO_WIDTH)}
+              alt={pin.title}
+              className="place-modal-photo aspect-video w-full object-cover"
+              // The small hover photo is cached: it shows until the big one arrives.
+              style={{ backgroundImage: `url("${photoUrl(pin.image, HOVER_PHOTO_WIDTH)}")` }}
+            />
+          )}
+          <div className="flex flex-col gap-4 p-5">
+            <DialogHeader>
+              <DialogTitle>{pin.title}</DialogTitle>
+              <PlaceSummary pin={pin} />
+            </DialogHeader>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary">{t("views", { views: pin.views })}</Badge>
+              {pin.family && <Badge variant="outline">{pin.family}</Badge>}
+              {isRising(pin) && <Badge>{t("rising")}</Badge>}
+            </div>
+            <Button asChild>
+              <a href={wikipediaUrl(pin)} target="_blank" rel="noopener noreferrer">
+                {t("read")}
+                <ExternalLinkIcon />
+              </a>
+            </Button>
+          </div>
+        </DialogContent>
+      )}
+    </Dialog>
+  );
+}
