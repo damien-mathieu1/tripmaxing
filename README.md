@@ -2,6 +2,8 @@
 
 Every geolocated Wikipedia article on a zoomable globe, and a trip engine that favours offbeat places.
 
+**Try it: [tripmaxing.vercel.app](https://tripmaxing.vercel.app)**
+
 ![tripmaxing demo: searching Lyon on the globe, opening a place, then planning a trip and following the walker along real footpaths](docs/demo.gif)
 
 Zoom from space to a street corner: 1.6 million places, the most viewed or rising ones first, with their photo. Pick one to read about it, or let tripmaxing build a walking trip around a city with places tourists rarely see.
