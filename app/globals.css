@@ -137,13 +137,19 @@
   cursor: pointer;
 }
 
-.photo-pin img {
+.photo-frame {
   width: 48px;
   height: 48px;
+  overflow: hidden;
   border: 2px solid #fff;
   border-radius: 9999px;
-  object-fit: cover;
   box-shadow: 0 1px 4px rgb(0 0 0 / 45%);
+}
+
+.photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .photo-pin span {
@@ -181,7 +187,6 @@
   overflow: visible;
   border: 3px solid #fff;
   border-radius: 9999px;
-  background: #e11d48;
   box-shadow: 0 6px 16px rgb(0 0 0 / 45%);
 }
 
@@ -232,7 +237,7 @@
 }
 
 /* Pin to modal morph: the photo flies on its own layer while the card opens around it. */
-[data-slot="dialog-content"] {
+[data-place-modal] {
   view-transition-name: place-card;
 }
 
@@ -248,7 +253,7 @@
 
 /* The transition animates the card: its own animation would delay unmounting on close. */
 @supports (view-transition-name: none) {
-  [data-slot="dialog-content"] {
+  [data-place-modal] {
     animation: none !important;
   }
 }
@@ -365,9 +370,12 @@ body {
 }
 
 /* Filters: a small pill that grows into the full panel. */
-.filters {
+:root {
   --spring: cubic-bezier(0.3, 1.35, 0.5, 1);
   --accent-pin: #e11d48;
+}
+
+.filters {
   position: absolute;
   top: calc(1rem + env(safe-area-inset-top));
   left: calc(1rem + env(safe-area-inset-left));
@@ -445,7 +453,7 @@ body {
 }
 
 /* Selection: pressing sinks the chip, turning it on pops it with the pin colour. */
-.filters [data-slot="toggle-group-item"],
+:is(.filters, .trip-form, .trip-card) [data-slot="toggle-group-item"],
 .filters [data-slot="toggle"] {
   transition:
     background-color 180ms ease,
@@ -454,12 +462,12 @@ body {
     box-shadow 180ms ease;
 }
 
-.filters [data-slot="toggle-group-item"]:active,
+:is(.filters, .trip-form, .trip-card) [data-slot="toggle-group-item"]:active,
 .filters [data-slot="toggle"]:active {
   transform: scale(0.92);
 }
 
-.filters [data-slot="toggle-group-item"][data-state="on"],
+:is(.filters, .trip-form, .trip-card) [data-slot="toggle-group-item"][data-state="on"],
 .filters [data-slot="toggle"][data-state="on"] {
   background: var(--accent-pin);
   box-shadow: 0 2px 10px color-mix(in oklab, var(--accent-pin) 45%, transparent);
@@ -474,7 +482,7 @@ body {
 }
 
 /* Slider: thumbs glide to presets, follow the finger exactly while dragging. */
-.popularity [data-slot="slider-range"] {
+:is(.popularity, .trip-form) [data-slot="slider-range"] {
   background: var(--accent-pin);
 }
 
@@ -485,7 +493,7 @@ body {
     right 320ms var(--spring);
 }
 
-.popularity [data-slot="slider-thumb"] {
+:is(.popularity, .trip-form) [data-slot="slider-thumb"] {
   position: relative;
   border-color: var(--accent-pin);
   transition:
@@ -494,17 +502,17 @@ body {
 }
 
 /* A bigger target than the visible thumb, for fingers. */
-.popularity [data-slot="slider-thumb"]::after {
+:is(.popularity, .trip-form) [data-slot="slider-thumb"]::after {
   position: absolute;
   inset: -14px;
   content: "";
 }
 
-.popularity [data-slot="slider-thumb"]:hover {
+:is(.popularity, .trip-form) [data-slot="slider-thumb"]:hover {
   transform: scale(1.2);
 }
 
-.popularity [data-slot="slider-thumb"]:active {
+:is(.popularity, .trip-form) [data-slot="slider-thumb"]:active {
   box-shadow: 0 0 0 7px color-mix(in oklab, var(--accent-pin) 22%, transparent);
   transform: scale(1.35);
 }
@@ -515,5 +523,504 @@ body {
   .stars::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Loading: light sweeps over a soft base, then the photo sharpens into place. */
+/* Fully opaque on purpose: nothing of the map shows through a photo that is loading. */
+.shimmer {
+  background-color: #334155;
+  background-image: linear-gradient(105deg, #334155 30%, #64748b 50%, #334155 70%);
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  animation: sweep 1.3s ease-in-out infinite;
+}
+
+[data-slot="skeleton"] {
+  background-color: #dfe3ea;
+  background-image: linear-gradient(105deg, #dfe3ea 30%, #f4f6f9 50%, #dfe3ea 70%);
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  animation: sweep 1.3s ease-in-out infinite;
+}
+
+/* A place without a photo: a calm colour, because nothing is going to load. */
+.no-photo {
+  background: linear-gradient(135deg, #334155, #e11d48);
+}
+
+.place-modal-photo.shimmer {
+  background-position: center;
+  background-size: cover;
+  animation: none;
+}
+
+.photo {
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(1.08);
+  transition:
+    opacity 180ms ease,
+    filter 520ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.photo[data-loaded="true"] {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+.bones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.bones [data-slot="skeleton"] {
+  height: 0.8rem;
+  border-radius: 9999px;
+}
+
+.bones [data-slot="skeleton"]:nth-child(1) {
+  width: 100%;
+}
+
+.bones [data-slot="skeleton"]:nth-child(2) {
+  width: 93%;
+  animation-delay: 90ms;
+}
+
+.bones [data-slot="skeleton"]:nth-child(3) {
+  width: 97%;
+  animation-delay: 180ms;
+}
+
+.bones [data-slot="skeleton"]:nth-child(4) {
+  width: 62%;
+  animation-delay: 270ms;
+}
+
+.summary {
+  animation: rise 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sweep {
+  from {
+    background-position: 130% 0;
+  }
+
+  to {
+    background-position: -130% 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Search */
+.trip-where {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+}
+
+.suggestions {
+  display: grid;
+  max-height: min(52dvh, 26rem);
+  grid-auto-rows: max-content;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+  overflow-y: auto;
+  padding: 0.15rem;
+}
+
+.suggestion {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.8rem;
+  background: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 220ms var(--spring),
+    box-shadow 200ms ease;
+  animation: rise 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.suggestion:hover {
+  transform: translateY(-2px);
+}
+
+.suggestion:active {
+  transform: scale(0.96);
+}
+
+.suggestion[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 3px var(--accent-pin),
+    0 6px 18px rgb(0 0 0 / 20%);
+}
+
+.suggestion-photo {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.suggestion-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.suggestion p {
+  overflow: hidden;
+  padding: 0.4rem 0.55rem 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion small {
+  display: block;
+  padding: 0 0.55rem 0.45rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.suggestion-check {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: grid;
+  width: 1.45rem;
+  height: 1.45rem;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--accent-pin);
+  color: #fff;
+  animation: chip-pop 260ms var(--spring);
+}
+
+.search {
+  position: absolute;
+  z-index: 5;
+  top: calc(1rem + env(safe-area-inset-top));
+  right: calc(1rem + env(safe-area-inset-right));
+  left: calc(9.25rem + env(safe-area-inset-left));
+  max-width: 24rem;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  background: color-mix(in oklab, var(--background) 92%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 35%);
+}
+
+.search [data-slot="command"] {
+  background: transparent;
+}
+
+.search-empty {
+  padding: 0.9rem;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.search-bones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.search-bones span {
+  height: 1.8rem;
+  border-radius: 0.6rem;
+  background-color: #dfe3ea;
+  background-image: linear-gradient(105deg, #dfe3ea 30%, #f4f6f9 50%, #dfe3ea 70%);
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  animation: sweep 1.3s ease-in-out infinite;
+}
+
+.filters {
+  z-index: 10;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer,
+  [data-slot="skeleton"],
+  .search-bones span,
+  .summary {
+    animation: none;
+  }
+}
+
+/* Trip */
+/* The main action of the map: sits above the credits, in the colour of the pins. */
+.trip-cta {
+  position: absolute;
+  z-index: 7;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  animation: cta-in 520ms var(--spring) both;
+}
+
+.trip-cta [data-slot="button"] {
+  height: 3rem;
+  padding: 0 1.4rem;
+  border-radius: 9999px;
+  background: var(--accent-pin);
+  box-shadow:
+    0 8px 26px rgb(0 0 0 / 45%),
+    0 0 0 4px color-mix(in oklab, var(--accent-pin) 30%, transparent);
+  color: #fff;
+  font-size: 1rem;
+  transition: transform 220ms var(--spring);
+}
+
+.trip-cta [data-slot="button"]:hover {
+  transform: scale(1.05);
+}
+
+.trip-cta [data-slot="button"]:active {
+  transform: scale(0.95);
+}
+
+@keyframes cta-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+main[data-trip="true"] .photo-pin,
+main[data-trip="true"] .filters,
+main[data-trip="true"] .search {
+  display: none;
+}
+
+.trip-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 0;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.trip-loading .walker {
+  --stride: 1;
+}
+
+.trip-card {
+  position: absolute;
+  z-index: 6;
+  right: 0;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  left: 0;
+  display: flex;
+  width: min(30rem, calc(100% - 1.5rem));
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0 auto;
+  padding: 0.85rem;
+  border-radius: 1.1rem;
+  background: color-mix(in oklab, var(--background) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 40%);
+  animation: card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.trip-photo {
+  width: 4.75rem;
+  height: 4.75rem;
+  flex: none;
+  overflow: hidden;
+  border-radius: 0.8rem;
+}
+
+.trip-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trip-summary {
+  min-height: 2.5rem;
+}
+
+.trip-summary .summary {
+  -webkit-line-clamp: 2;
+}
+
+.trip-summary .bones [data-slot="skeleton"]:nth-child(n + 3) {
+  display: none;
+}
+
+.trip-stop {
+  position: relative;
+  cursor: pointer;
+  transition: transform 280ms var(--spring);
+}
+
+.trip-stop .photo-frame {
+  width: 38px;
+  height: 38px;
+}
+
+.trip-stop span {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--accent-pin);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.trip-stop[data-active] {
+  z-index: 2;
+}
+
+.trip-stop[data-active] .photo-frame {
+  border-color: #facc15;
+  box-shadow: 0 0 0 4px rgb(250 204 21 / 35%);
+  transform: scale(1.3);
+  transition: transform 280ms var(--spring);
+}
+
+/* The walker: limbs swing around their top end. */
+.walker {
+  position: relative;
+  width: 26px;
+  height: 44px;
+  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 45%));
+  pointer-events: none;
+}
+
+.walker[data-left] {
+  transform: scaleX(-1);
+}
+
+.walker span {
+  position: absolute;
+  display: block;
+}
+
+.walker-head {
+  top: 0;
+  left: 8px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fde68a;
+  box-shadow: inset 0 3px 0 #92400e;
+}
+
+.walker-pack {
+  top: 12px;
+  left: 3px;
+  width: 7px;
+  height: 13px;
+  border-radius: 3px;
+  background: #1d4ed8;
+}
+
+.walker-body {
+  top: 11px;
+  left: 8px;
+  width: 10px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--accent-pin);
+}
+
+.walker-arm,
+.walker-arm-back,
+.walker-leg,
+.walker-leg-back {
+  transform-origin: top center;
+}
+
+.walker-arm,
+.walker-arm-back {
+  top: 13px;
+  left: 12px;
+  width: 4px;
+  height: 13px;
+  border-radius: 2px;
+  background: #fde68a;
+}
+
+.walker-leg,
+.walker-leg-back {
+  top: 26px;
+  left: 11px;
+  width: 5px;
+  height: 16px;
+  border-radius: 2px;
+  background: #1e293b;
+}
+
+.walker-arm-back,
+.walker-leg-back {
+  z-index: -1;
+  filter: brightness(0.75);
+}
+
+.walker[data-walking] .walker-leg,
+.walker[data-walking] .walker-arm-back,
+.trip-loading .walker-leg,
+.trip-loading .walker-arm-back {
+  animation: stride 0.5s ease-in-out infinite alternate;
+}
+
+.walker[data-walking] .walker-leg-back,
+.walker[data-walking] .walker-arm,
+.trip-loading .walker-leg-back,
+.trip-loading .walker-arm {
+  animation: stride 0.5s ease-in-out infinite alternate-reverse;
+}
+
+.walker[data-walking],
+.trip-loading .walker {
+  animation: bob 0.25s ease-in-out infinite alternate;
+}
+
+@keyframes stride {
+  from {
+    transform: rotate(28deg);
+  }
+
+  to {
+    transform: rotate(-28deg);
+  }
+}
+
+@keyframes bob {
+  to {
+    translate: 0 -2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walker *,
+  .walker,
+  .trip-card {
+    animation: none !important;
   }
 }

@@ -13,6 +13,9 @@ export const BORDERS = {
 export type BorderId = keyof typeof BORDERS;
 export type Filters = { rising: boolean; kinds: Kind[]; views: Range };
 
+// From far away the planet stays clean: places appear on the way in.
+export const MIN_PIN_ZOOM = 2;
+
 const PIN_WIDTH = 40;
 const PIN_HEIGHT = 52;
 const IS_RISING: ExpressionSpecification = [
@@ -84,6 +87,13 @@ export function addBorders(map: MapLibreMap, visible: BorderId[], color: string)
   }
 }
 
+/** Hides the pins of places already shown as a photo. */
+export function hidePins(map: MapLibreMap, ids: number[]) {
+  if (map.getLayer("pins")) {
+    map.setFilter("pins", ["!", ["in", ["get", "id"], ["literal", ids]]]);
+  }
+}
+
 export function addPins(map: MapLibreMap, filters: Filters) {
   map.addImage("pin", drawPin("#e11d48"), { pixelRatio: 2 });
   map.addImage("pin-rising", drawPin("#f97316"), { pixelRatio: 2 });
@@ -94,10 +104,20 @@ export function addPins(map: MapLibreMap, filters: Filters) {
     attribution:
       '<a href="https://www.wikipedia.org">Wikipédia</a> (CC BY-SA), <a href="https://www.wikidata.org">Wikidata</a>',
   });
+  // Invisible twin of the pins: photos are chosen here, even for pins they currently hide.
+  map.addLayer({
+    id: "pins-query",
+    type: "circle",
+    source: "places",
+    "source-layer": "places",
+    minzoom: MIN_PIN_ZOOM,
+    paint: { "circle-radius": 1, "circle-opacity": 0 },
+  });
   map.addLayer({
     id: "pins",
     type: "symbol",
     source: "places",
+    minzoom: MIN_PIN_ZOOM,
     "source-layer": "places",
     layout: {
       "icon-image": ["case", IS_RISING, "pin-rising", "pin"],

@@ -53,5 +53,53 @@
     "views": "{views, number} vues en 30 jours",
     "rising": "En hausse",
     "read": "Lire sur Wikipédia"
+  },
+  "search": {
+    "label": "Rechercher un lieu",
+    "placeholder": "Pays, ville, village…",
+    "loading": "Recherche en cours",
+    "empty": "Aucun lieu trouvé"
+  },
+  "trip": {
+    "open": "Créer un voyage",
+    "title": "Ton voyage",
+    "around": "Autour de {place}",
+    "mapCenter": "centre de la carte",
+    "days": "{count, plural, one {# jour} other {# jours}}",
+    "stops": "{count} lieux par jour",
+    "maxWalk": "Marche max : {time} par jour",
+    "styleLabel": "Style de voyage",
+    "style": {
+      "niche": "Niche",
+      "mixed": "Mix des deux",
+      "touristy": "Touristique"
+    },
+    "styleSlider": "Plus touristique ou plus niche",
+    "generate": "Voir les suggestions",
+    "loading": "Le petit bonhomme repère le chemin…",
+    "empty": "Pas assez de lieux ici avec ces réglages. Essaie plus de marche ou moins de lieux.",
+    "error": "Impossible de créer ce voyage pour le moment.",
+    "day": "Jour {day}",
+    "stop": "Étape {current} sur {total}",
+    "legWalk": "{minutes} min à pied depuis l'étape d'avant",
+    "start": "Départ de la journée",
+    "daySummary": "{km} km · {time} de marche",
+    "previous": "Étape précédente",
+    "next": "Étape suivante",
+    "close": "Quitter le voyage",
+    "details": "Voir le lieu",
+    "estimated": "Trajet estimé à vol d'oiseau",
+    "where": "Où veux-tu aller ?",
+    "whereHint": "Ville, région ou pays",
+    "change": "Changer",
+    "pick": "Choisis tes lieux",
+    "pickHelp": "Prends environ {count} lieux par jour, le bonhomme s'occupe du reste.",
+    "selected": "{count} sélectionnés",
+    "walkEstimate": "≈ {time} de marche",
+    "tooMuch": "au-dessus de ta limite",
+    "back": "Retour",
+    "launch": "Lancer le voyage",
+    "needStops": "Choisis au moins 2 lieux par jour",
+    "suggesting": "Le petit bonhomme cherche des lieux…"
   }
 }

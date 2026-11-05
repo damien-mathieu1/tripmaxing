@@ -13,11 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { capitalize } from "@/lib/utils";
 import { HOVER_PHOTO_WIDTH, MODAL_PHOTO_WIDTH } from "./morph";
-import { type Pin, isRising, photoUrl, wikipediaUrl } from "./pin";
+import { type Pin, isRising, photoUrl, revealPhoto, wikipediaUrl } from "./pin";
 
 /** Texts stay out of the database: they load from Wikipedia when a place opens. */
-function PlaceSummary({ pin }: { pin: Pin }) {
+export function PlaceSummary({ pin }: { pin: Pin }) {
   const t = useTranslations("place");
   const [summary, setSummary] = useState<string | null>(null);
   const fallback = t("fallback");
@@ -38,17 +39,15 @@ function PlaceSummary({ pin }: { pin: Pin }) {
 
   if (summary === null) {
     return (
-      <div className="flex flex-col gap-2" aria-label={t("loading")}>
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-4/5" />
+      <div className="bones" aria-label={t("loading")}>
+        <Skeleton />
+        <Skeleton />
+        <Skeleton />
+        <Skeleton />
       </div>
     );
   }
-  return (
-    <div className="line-clamp-5">
-      <DialogDescription>{summary}</DialogDescription>
-    </div>
-  );
+  return <p className="summary line-clamp-5 text-sm text-muted-foreground">{summary}</p>;
 }
 
 export function PlaceModal({ pin, onClose }: { pin: Pin | null; onClose: () => void }) {
@@ -57,27 +56,37 @@ export function PlaceModal({ pin, onClose }: { pin: Pin | null; onClose: () => v
     <Dialog open={pin !== null} onOpenChange={(open) => !open && onClose()}>
       {pin && (
         <DialogContent
+          data-place-modal
           aria-describedby={undefined}
           className="gap-0 overflow-hidden p-0 sm:max-w-lg"
         >
           {pin.image && (
-            // oxlint-disable-next-line nextjs/no-img-element -- Commons already serves resized images
-            <img
-              src={photoUrl(pin.image, MODAL_PHOTO_WIDTH)}
-              alt={pin.title}
-              className="place-modal-photo aspect-video w-full object-cover"
+            <div
+              className="place-modal-photo shimmer aspect-video w-full overflow-hidden"
               // The small hover photo is cached: it shows until the big one arrives.
               style={{ backgroundImage: `url("${photoUrl(pin.image, HOVER_PHOTO_WIDTH)}")` }}
-            />
+            >
+              {/* oxlint-disable-next-line nextjs/no-img-element -- Commons serves resized images */}
+              <img
+                ref={revealPhoto}
+                src={photoUrl(pin.image, MODAL_PHOTO_WIDTH)}
+                alt={pin.title}
+                className="photo size-full object-cover"
+              />
+            </div>
           )}
           <div className="flex flex-col gap-4 p-5">
             <DialogHeader>
-              <DialogTitle>{pin.title}</DialogTitle>
-              <PlaceSummary pin={pin} />
+              <DialogTitle>{capitalize(pin.title)}</DialogTitle>
+              <DialogDescription asChild>
+                <div>
+                  <PlaceSummary pin={pin} />
+                </div>
+              </DialogDescription>
             </DialogHeader>
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">{t("views", { views: pin.views })}</Badge>
-              {pin.family && <Badge variant="outline">{pin.family}</Badge>}
+              {pin.family && <Badge variant="outline">{capitalize(pin.family)}</Badge>}
               {isRising(pin) && <Badge>{t("rising")}</Badge>}
             </div>
             <Button asChild>

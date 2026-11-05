@@ -47,20 +47,25 @@ After changing `lib/places/kind.ts`, run `pnpm import:places` to reclassify stor
 
 The app installs as a PWA. `public/sw.js` caches the shell and recent place tiles, but not base maps: those come from third-party servers and need a connection. The service worker only registers in production builds.
 
+## Trips
+
+"Créer un voyage" plans days around the map centre or the last search, then a walker follows real footpaths from the public OpenStreetMap foot router. Without that router, the trip falls back to straight lines and says so.
+
 ## Trip API
 
 ```bash
 curl "localhost:3100/api/trips?lat=45.764&lon=4.8357&days=3&stops=6&offbeat=1"
 ```
 
-| Parameter    | Default | Meaning                                  |
-| ------------ | ------- | ---------------------------------------- |
-| `lat`, `lon` |         | Centre of the trip                       |
-| `radiusKm`   | 6       | Search radius                            |
-| `days`       | 3       | Days, 1 to 14                            |
-| `stops`      | 6       | Stops per day, 2 to 10                   |
-| `offbeat`    | 0.7     | 0 famous places, 1 rare places           |
-| `trending`   | 0       | 0 ignores trends, 1 favours rising pages |
+| Parameter        | Default | Meaning                                  |
+| ---------------- | ------- | ---------------------------------------- |
+| `lat`, `lon`     |         | Centre of the trip                       |
+| `radiusKm`       | 6       | Search radius                            |
+| `days`           | 3       | Days, 1 to 14                            |
+| `stops`          | 6       | Stops per day, 2 to 10                   |
+| `offbeat`        | 0.7     | 0 famous places, 1 rare places           |
+| `maxWalkMinutes` |         | Walking budget per day, 15 to 480        |
+| `trending`       | 0       | 0 ignores trends, 1 favours rising pages |
 
 Walking times are estimates, and a place may be closed or have nothing left to see.
 

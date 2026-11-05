@@ -19,3 +19,13 @@ export const photoUrl = (image: string, width: number) =>
 
 export const wikipediaUrl = ({ lang, title }: Pin) =>
   `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replaceAll(" ", "_"))}`;
+
+/** Fades a photo in once it can really show, also when the browser already had it. */
+export function revealPhoto(image: HTMLImageElement | null) {
+  if (!image) return;
+  const show = () => {
+    image.dataset.loaded = "true";
+  };
+  if (image.complete && image.naturalWidth) show();
+  else image.addEventListener("load", show, { once: true });
+}

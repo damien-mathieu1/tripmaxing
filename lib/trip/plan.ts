@@ -8,6 +8,10 @@ export type TripOptions = {
   offbeat: number;
   trending?: number;
   dayRadiusKm?: number;
+  maxWalkMinutes?: number;
+  /** Suggestions mode: returns best-first candidates per day, to choose from. */
+  suggest?: boolean;
+  minStops?: number;
 };
 
 // shortcut: straight line x detour, use a routing API when real walking times matter
@@ -59,12 +63,13 @@ export function order<T extends Point>(stops: T[]): T[] {
 }
 
 function pickDay(seed: Candidate, pool: Candidate[], stops: number, radiusKm: number) {
+  const perFamily = Math.max(MAX_PER_FAMILY, Math.ceil(stops / 3));
   const seen = new Map([[seed.family, 1]]);
   const day = [seed];
   for (const place of pool) {
     if (day.length === stops) break;
     const count = seen.get(place.family) ?? 0;
-    if (place !== seed && count < MAX_PER_FAMILY && km(seed, place) <= radiusKm) {
+    if (place !== seed && count < perFamily && km(seed, place) <= radiusKm) {
       seen.set(place.family, count + 1);
       day.push(place);
     }
@@ -72,8 +77,26 @@ function pickDay(seed: Candidate, pool: Candidate[], stops: number, radiusKm: nu
   return day;
 }
 
+export const walkMinutes = (route: Point[]) => ((routeKm(route) * DETOUR) / WALK_KMH) * 60;
+
+/** Drops the stop that saves the most walking until the day fits. */
+function fitWalk<T extends Point>(route: T[], maxMinutes: number) {
+  let fitted = route;
+  while (fitted.length > 2 && walkMinutes(fitted) > maxMinutes) {
+    const options = fitted.map((_, i) => fitted.filter((__, j) => j !== i));
+    fitted = options.reduce((best, option) => (routeKm(option) < routeKm(best) ? option : best));
+  }
+  return fitted;
+}
+
 export function planTrip(places: Candidate[], options: TripOptions) {
-  const { days, stops, offbeat, trending = 0, dayRadiusKm = 1.5 } = options;
+  const { days, stops, offbeat, trending = 0, maxWalkMinutes = Infinity, suggest } = options;
+  const { minStops = stops } = options;
+  // A loop out and back: places further than a third of the walk rarely fit in the day.
+  const walkRadiusKm = ((maxWalkMinutes / 60) * WALK_KMH) / DETOUR / 3;
+  const {
+    dayRadiusKm = Math.min(3, Math.max(0.8, Number.isFinite(walkRadiusKm) ? walkRadiusKm : 1.5)),
+  } = options;
   let pool = rank(places, offbeat, trending).slice(0, days * stops * POOL_PER_STOP);
   const seeds: Candidate[] = [];
   const trip: Candidate[][] = [];
@@ -83,12 +106,12 @@ export function planTrip(places: Candidate[], options: TripOptions) {
     const apart = (seed: Candidate) => seeds.every((other) => km(seed, other) > dayRadiusKm);
     // Prefer a new area each day, reuse a nearby one rather than dropping a day.
     const seed =
-      pool.find((p) => apart(p) && fill(p).length === stops) ??
-      pool.find((p) => fill(p).length === stops);
+      pool.find((p) => apart(p) && fill(p).length >= minStops) ??
+      pool.find((p) => fill(p).length >= minStops);
     if (!seed) break;
-    const day = fill(seed);
+    const day = suggest ? fill(seed) : fitWalk(order(fill(seed)), maxWalkMinutes);
     seeds.push(seed);
-    trip.push(order(day));
+    trip.push(day);
     pool = pool.filter((place) => !day.includes(place));
   }
 

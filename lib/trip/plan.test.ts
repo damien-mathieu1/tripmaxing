@@ -80,6 +80,24 @@ describe("planTrip", () => {
     expect(planTrip(places, { days: 2, stops: 30, offbeat: 1 })).toEqual([]);
   });
 
+  it("keeps the walk under the limit", () => {
+    const spread = places.map((p, i) => ({ ...p, lat: 45 + i / 200 }));
+    const [day] = planTrip(spread, {
+      days: 1,
+      stops: 6,
+      offbeat: 1,
+      dayRadiusKm: 5,
+      maxWalkMinutes: 40,
+    });
+    expect(day.minutes - day.stops.length * 30).toBeLessThanOrEqual(40);
+    expect(day.stops.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("offers more suggestions than stops, without a fixed route", () => {
+    const days = planTrip(places, { days: 1, stops: 9, minStops: 3, offbeat: 1, suggest: true });
+    expect(days[0].stops.length).toBeGreaterThan(3);
+  });
+
   it("moves to another area when one exists", () => {
     const far = places.map((p) => ({
       ...p,

@@ -1,32 +1,58 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { TrendingUpIcon } from "lucide-react";
+import { RouteIcon, TrendingUpIcon } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type PlannerPlace, TripPlanner } from "@/components/trip/trip-planner";
+import { TripPlayer } from "@/components/trip/trip-player";
+import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MAP_STYLES, type MapStyleId } from "@/lib/map-styles";
 import { KIND_IDS, type Kind } from "@/lib/places/kind";
 import { FULL_RANGE } from "@/lib/places/popularity";
+import { km } from "@/lib/trip/plan";
+import { capitalize } from "@/lib/utils";
+import type { TripDay } from "@/lib/trip/walking";
 import { FiltersPanel } from "./filters-panel";
-import { BORDERS, type BorderId, type Filters, addBorders, addPins, tilesUrl } from "./map-layers";
+import {
+  BORDERS,
+  type BorderId,
+  type Filters,
+  MIN_PIN_ZOOM,
+  addBorders,
+  addPins,
+  hidePins,
+  tilesUrl,
+} from "./map-layers";
 import { HOVER_PHOTO_WIDTH, MODAL_PHOTO_WIDTH, morph, namePhoto } from "./morph";
-import { type Pin, photoUrl } from "./pin";
+import { type Pin, photoUrl, revealPhoto } from "./pin";
 import { PlaceModal } from "./place-modal";
 import { PopularityFilter } from "./popularity-filter";
+import { type Destination, SearchBar } from "./search-bar";
 import { starTile } from "./starfield";
 
-const PHOTO_ZOOM = 14;
-const MAX_PHOTOS = 40;
-const MAX_PHOTOS_TOUCH = 12;
+// Photos near the edge of the planet would float in space.
+const VISIBLE_HORIZON_KM = 4500;
+const HORIZON_ZOOM = 6;
+// Highlighted places by zoom: a few from space, more as streets appear.
+const PHOTO_LIMITS: [zoom: number, count: number][] = [
+  [MIN_PIN_ZOOM, 0],
+  [4, 6],
+  [8, 10],
+  [12, 16],
+  [Infinity, 40],
+];
 const TOUCH_HIT_PX = 18;
 const MOUSE_HIT_PX = 3;
 const STAR_PARALLAX = 2.5;
+const SAME_PLACE_KM = 15;
 const PHOTO_WAIT_MS = 250;
-const PHOTO_SPACING_PX = 90;
-const PIN_HEIGHT_PX = 26;
+const PHOTO_SPACING_PX = 100;
+// Half the photo: its centre sits on the place, the name hangs below.
+const PHOTO_RADIUS_PX = 25;
 
 /** Lets the big photo arrive before the morph snapshot, without ever holding up a tap. */
 async function photoReady(image: HTMLImageElement | null) {
@@ -42,14 +68,18 @@ function photoMarker(pin: Pin, onSelect: (pin: Pin, image: HTMLImageElement) => 
   button.type = "button";
   button.className = "photo-pin";
   button.setAttribute("aria-label", pin.title);
+  const frame = document.createElement("div");
+  frame.className = "photo-frame shimmer";
   const image = document.createElement("img");
+  image.className = "photo";
   image.src = photoUrl(pin.image!, 96);
   image.alt = "";
-  image.loading = "lazy";
   image.onerror = () => image.remove();
+  revealPhoto(image);
+  frame.append(image);
   const name = document.createElement("span");
-  name.textContent = pin.title;
-  button.append(image, name);
+  name.textContent = capitalize(pin.title);
+  button.append(frame, name);
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     onSelect(pin, image);
@@ -62,18 +92,20 @@ function hoverCard(pin: Pin) {
   root.className = "pin-hover";
   const card = document.createElement("div");
   const bubble = document.createElement("div");
-  bubble.className = "pin-hover-bubble";
+  bubble.className = `pin-hover-bubble ${pin.image ? "shimmer" : "no-photo"}`;
   if (pin.image) {
     const image = document.createElement("img");
+    image.className = "photo";
     image.src = photoUrl(pin.image, HOVER_PHOTO_WIDTH);
     image.alt = "";
     image.onerror = () => image.remove();
+    revealPhoto(image);
     bubble.append(image);
     // Warms the cache, so the modal photo is ready when the morph starts.
     new Image().src = photoUrl(pin.image, MODAL_PHOTO_WIDTH);
   }
   const name = document.createElement("span");
-  name.textContent = pin.title;
+  name.textContent = capitalize(pin.title);
   card.append(bubble, name);
   root.append(card);
   return root;
@@ -93,6 +125,20 @@ export function Globe() {
   // Read by style.load, which outlives any single render.
   const overlays = useRef({ borders, filters, layer });
   overlays.current = { borders, filters, layer };
+  const [planner, setPlanner] = useState<PlannerPlace | null>(null);
+  const [trip, setTrip] = useState<TripDay[] | null>(null);
+  const tripActive = useRef(false);
+  tripActive.current = trip !== null;
+  const destination = useRef<Destination | null>(null);
+  const goTo = useCallback((place: Destination) => {
+    destination.current = place;
+    mapRef.current?.flyTo({
+      center: [place.lon, place.lat],
+      zoom: place.zoom,
+      duration: 2600,
+      essential: true,
+    });
+  }, []);
   const morphSource = useRef<HTMLImageElement | null>(null);
   const hover = useRef({ pinned: false, clear: () => {} });
 
@@ -130,6 +176,7 @@ export function Globe() {
       ...(window.location.hash ? {} : { center: [8, 30] as [number, number], zoom: 1.6 }),
       maxZoom: 19,
       hash: true,
+      attributionControl: { compact: true },
       // Phones have 3x screens: the extra pixels cost frames for no visible gain on a map.
       pixelRatio: Math.min(window.devicePixelRatio, 2),
       fadeDuration: 100,
@@ -146,7 +193,9 @@ export function Globe() {
       const { borders, filters, layer } = overlays.current;
       addBorders(map, borders, MAP_STYLES[layer].borderColor);
       addPins(map, filters);
+      hiddenPins = "";
     });
+    let hiddenPins = "";
     let hovered: { id: number; marker: maplibregl.Marker } | null = null;
     const clearHover = () => {
       // The open modal flies back to this photo when it closes.
@@ -205,8 +254,8 @@ export function Globe() {
     const photos = new Map<number, maplibregl.Marker>();
     map.on("idle", () => {
       const pins = new Map<number, { pin: Pin; lngLat: [number, number] }>();
-      if (map.getZoom() >= PHOTO_ZOOM && map.getLayer("pins")) {
-        const features = map.queryRenderedFeatures({ layers: ["pins"] });
+      if (map.getLayer("pins-query") && !tripActive.current) {
+        const features = map.queryRenderedFeatures({ layers: ["pins-query"] });
         for (const feature of features) {
           const pin = feature.properties as Pin;
           if (pin.image && feature.geometry.type === "Point") {
@@ -216,8 +265,15 @@ export function Globe() {
       }
       const ranked = [...pins.values()].sort((a, b) => b.pin.views - a.pin.views);
       const shown: typeof ranked = [];
+      const zoom = map.getZoom();
+      const count = PHOTO_LIMITS.find(([below]) => zoom < below)?.[1] ?? 0;
+      const limit = touch ? Math.ceil(count / 2) : count;
+      const { lng, lat } = map.getCenter();
       for (const candidate of ranked) {
-        if (shown.length === (touch ? MAX_PHOTOS_TOUCH : MAX_PHOTOS)) break;
+        if (shown.length === limit) break;
+        const [lon, placeLat] = candidate.lngLat;
+        const distance = km({ lat, lon: lng }, { lat: placeLat, lon });
+        if (zoom < HORIZON_ZOOM && distance > VISIBLE_HORIZON_KM) continue;
         const point = map.project(candidate.lngLat);
         const clear = shown.every(
           ({ lngLat }) => map.project(lngLat).dist(point) >= PHOTO_SPACING_PX,
@@ -235,10 +291,16 @@ export function Globe() {
         if (photos.has(pin.id)) continue;
         const marker = new maplibregl.Marker({
           element: photoMarker(pin, (place, image) => void openPlace(place, image)),
-          anchor: "bottom",
-          offset: [0, -PIN_HEIGHT_PX],
+          anchor: "top",
+          offset: [0, -PHOTO_RADIUS_PX],
         });
         photos.set(pin.id, marker.setLngLat(lngLat).addTo(map));
+      }
+      const ids = shown.map(({ pin }) => pin.id).sort((a, b) => a - b);
+      const key = ids.join();
+      if (key !== hiddenPins) {
+        hiddenPins = key;
+        hidePins(map, ids);
       }
     });
 
@@ -271,6 +333,16 @@ export function Globe() {
     mapRef.current?.setStyle(MAP_STYLES[next as MapStyleId].style, { diff: false });
   };
 
+  const openPlanner = () => {
+    const center = mapRef.current?.getCenter();
+    if (!center) return;
+    const here = { lat: center.lat, lon: center.lng, zoom: mapRef.current?.getZoom() ?? 12 };
+    const place = destination.current;
+    // The last search names the trip, as long as the map is still looking at it.
+    const near = place && km(place, here) < SAME_PLACE_KM;
+    setPlanner(near ? place : { ...here, label: null });
+  };
+
   const activeCount =
     filters.kinds.length +
     borders.length +
@@ -278,7 +350,7 @@ export function Globe() {
     Number(filters.views[0] !== FULL_RANGE[0] || filters.views[1] !== FULL_RANGE[1]);
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-black">
+    <main className="relative h-dvh w-full overflow-hidden bg-black" data-trip={trip !== null}>
       <div
         ref={starsRef}
         className="stars"
@@ -286,6 +358,7 @@ export function Globe() {
         aria-hidden
       />
       <div ref={container} className="size-full" aria-label={t("map.label")} />
+      <SearchBar onPick={goTo} />
       <FiltersPanel
         open={filtersOpen}
         activeCount={activeCount}
@@ -348,6 +421,28 @@ export function Globe() {
           ))}
         </ToggleGroup>
       </FiltersPanel>
+      {!trip && (
+        <div className="trip-cta">
+          <Button onClick={openPlanner}>
+            <RouteIcon />
+            {t("trip.open")}
+          </Button>
+        </div>
+      )}
+      {planner && (
+        <TripPlanner
+          open
+          place={planner}
+          onOpenChange={(open) => !open && setPlanner(null)}
+          onReady={(days) => {
+            setPlanner(null);
+            setTrip(days);
+          }}
+        />
+      )}
+      {trip && mapRef.current && (
+        <TripPlayer map={mapRef.current} days={trip} onClose={() => setTrip(null)} />
+      )}
       <PlaceModal pin={selected} onClose={closePlace} />
     </main>
   );
