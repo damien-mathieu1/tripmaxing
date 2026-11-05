@@ -2,6 +2,21 @@
 
 Every geolocated Wikipedia article on a zoomable globe, and a trip engine that favours offbeat places.
 
+![wikitrip demo: searching Lyon on the globe, opening a place, then planning a trip and following the walker along real footpaths](docs/demo.gif)
+
+Zoom from space to a street corner: 1.6 million places, the most viewed or rising ones first, with their photo. Pick one to read about it, or let wikitrip build a walking trip around a city with places tourists rarely see.
+
+## Features
+
+- Globe with satellite, road and topographic maps, country, region and department borders
+- Pins for every geolocated article in `WIKI_LANGS`, thinned by popularity at each zoom level
+- Filters by place type, popularity (niche to touristy) and rising articles
+- Search any country, city or village
+- Trip planner: perimeter, days, stops, walking budget, style and place types, then pick from suggestions
+- Animated walker following real footpaths, one stop at a time
+- Installable PWA, with trips saved on the device for offline use
+- French interface, free, no account
+
 ## Stack
 
 - Next.js on Vercel, shadcn/ui, MapLibre GL in globe mode
@@ -23,15 +38,29 @@ pnpm dev
 
 Open http://localhost:3100. The seed loads Lyon, so you get pins without calling Wikimedia.
 
+## Scripts
+
+| Command           | What it does                      |
+| ----------------- | --------------------------------- |
+| `pnpm dev`        | Start the dev server on port 3100 |
+| `pnpm build`      | Production build                  |
+| `pnpm test`       | Run tests with vitest             |
+| `pnpm typecheck`  | Type-check with tsc               |
+| `pnpm lint`       | Lint with oxlint + `@shadcn/lint` |
+| `pnpm format`     | Format with oxfmt                 |
+| `pnpm db:up`      | Start the local PostGIS database  |
+| `pnpm db:migrate` | Create or update the schema       |
+| `pnpm db:seed`    | Load the Lyon sample              |
+
 ## Data pipeline
 
 | Command                         | Job                                                                                                    | Speed             |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
-| `pnpm import:places`            | Every geolocated article of `WIKI_LANGS`, from QLever (a fast public Wikidata endpoint), area by area. | A few minutes     |
+| `pnpm import:places`            | Every geolocated article of `WIKI_LANGS`, from QLever (a fast public Wikidata endpoint), area by area. | Up to a few hours |
 | `pnpm import:views [new] [old]` | Views and trends for every place, streamed from monthly Wikimedia dumps. Nothing on disk.              | About an hour     |
 | `/api/cron/refresh`             | Walks the table by id for fresher views, images and article sizes, then starts over.                   | ~350 per 45 s run |
 
-`.github/workflows/import.yml` runs both imports monthly. `.github/workflows/cron.yml` calls the refresh every 15 minutes.
+`.github/workflows/cron.yml` calls the refresh every 15 minutes. `.github/workflows/import.yml` runs both imports monthly once enabled, see [Deploy](#deploy).
 
 When Wikimedia asks to slow down, `Retry-After` is saved and honoured by later runs. Set `WIKIMEDIA_USER_AGENT` to something with a contact, as their policy requires.
 
@@ -71,24 +100,48 @@ Walking times are estimates, and a place may be closed or have nothing left to s
 
 ## Deploy
 
-1. Create a Supabase project and enable PostGIS.
-2. Run the imports from your machine, with `DATABASE_URL` set to the Supabase direct connection:
+1. Create a Supabase project. In **Connect**, copy the session pooler URL (port 5432) and the transaction pooler URL (port 6543).
+2. Create the schema with the session pooler URL. This also enables PostGIS:
 
    ```bash
-   pnpm db:migrate
-   pnpm import:places
-   pnpm import:views
+   DATABASE_URL="<session pooler URL>" pnpm db:migrate
    ```
 
-3. Import the repository in Vercel. Set `DATABASE_URL` to the transaction pooler (port 6543), plus `CRON_SECRET`, `WIKI_LANGS` and `WIKIMEDIA_USER_AGENT`.
-4. In GitHub, set the `APP_URL` variable and the `CRON_SECRET` and `DATABASE_URL` secrets to enable refreshes and monthly imports.
+3. Fill the database. Run `pnpm import:places` and `pnpm import:views` with the same `DATABASE_URL`, or copy a database you already imported locally:
+
+   ```bash
+   docker compose exec -T db pg_dump -U wikitrip --data-only --table=places wikitrip | docker compose exec -T db psql "<session pooler URL>"
+   ```
+
+4. Import the repository in Vercel. Set `DATABASE_URL` to the transaction pooler URL, plus `CRON_SECRET`, `WIKI_LANGS` and `WIKIMEDIA_USER_AGENT`.
+5. In GitHub, set the `APP_URL` variable and the `CRON_SECRET` secret to enable refreshes.
+6. Optional: set the `ENABLE_IMPORT` variable to `true` and the `DATABASE_URL` secret (session pooler) to enable monthly imports. They rewrite the whole table, so the database can grow past 500 MB until the next vacuum.
 
 ## Contributing
 
-Commits follow Conventional Commits. The pre-commit hook runs the audit, typecheck, tests, build, oxlint with `@shadcn/lint`, and oxfmt. CI runs the same checks.
+Issues and pull requests are welcome.
+
+`pnpm install` sets up the git hooks (husky):
+
+- `pre-commit`: audit, typecheck, tests, build, then oxlint and oxfmt on staged files (lint-staged)
+- `commit-msg`: commitlint, with [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`, ...)
+
+CI runs the same checks. A few project rules:
+
+- User-facing text lives in `messages/fr.json`, never in components
+- Use the components of `components/ui` through their variants, `shadcn/no-restyle` is an error
+- Wikimedia limits are strict: only call its APIs from `lib/ingest`, and keep `Retry-After` persisted
 
 `poc/` keeps the Python prototype and the Lyon dataset used by the seed.
 
 ## Credits
 
-Text from Wikipedia (CC BY-SA), data from Wikidata (CC0). Maps by OpenFreeMap, OpenStreetMap, OpenTopoMap and EOX Sentinel-2 cloudless (CC BY-NC-SA, non-commercial).
+Text from [Wikipedia](https://www.wikipedia.org) (CC BY-SA), photos from [Wikimedia Commons](https://commons.wikimedia.org) (each under its own license), data from [Wikidata](https://www.wikidata.org) (CC0), imported through [QLever](https://qlever.dev).
+
+Maps by [OpenFreeMap](https://openfreemap.org), [OpenStreetMap](https://www.openstreetmap.org/copyright), [OpenTopoMap](https://opentopomap.org) and [EOX Sentinel-2 cloudless](https://s2maps.eu) (CC BY-NC-SA, non-commercial). Walking routes by the [FOSSGIS OSM routing service](https://routing.openstreetmap.de).
+
+wikitrip is an independent project with no official link to the Wikimedia Foundation.
+
+## License
+
+[MIT](LICENSE) for the code. The data and maps above keep their own licenses.

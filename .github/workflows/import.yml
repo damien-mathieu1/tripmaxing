@@ -1,6 +1,7 @@
 name: Monthly import
 
-# New places and last month's views for the whole world. Needs the DATABASE_URL secret.
+# New places and last month's views for the whole world.
+# Off until the ENABLE_IMPORT variable is "true": it needs the DATABASE_URL secret and rewrites the whole table.
 on:
   schedule:
     - cron: "0 6 3 * *"
@@ -12,7 +13,7 @@ jobs:
   import:
     name: Import places and views
     runs-on: ubuntu-latest
-    if: vars.APP_URL != ''
+    if: vars.ENABLE_IMPORT == 'true'
     timeout-minutes: 350
     permissions:
       contents: read
