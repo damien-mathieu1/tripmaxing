@@ -110,7 +110,7 @@ Walking times are estimates, and a place may be closed or have nothing left to s
 3. Fill the database. Run `pnpm import:places` and `pnpm import:views` with the same `DATABASE_URL`, or copy a database you already imported locally:
 
    ```bash
-   docker compose exec -T db pg_dump -U wikitrip --data-only --table=places wikitrip | docker compose exec -T db psql "<session pooler URL>"
+   docker compose exec -T db pg_dump -U tripmaxing --data-only --table=places tripmaxing | docker compose exec -T db psql "<session pooler URL>"
    ```
 
 4. Import the repository in Vercel. Set `DATABASE_URL` to the transaction pooler URL, plus `CRON_SECRET`, `WIKI_LANGS` and `WIKIMEDIA_USER_AGENT`.
