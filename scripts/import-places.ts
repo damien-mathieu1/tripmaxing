@@ -29,7 +29,7 @@ async function fetchWithRetry(url: string) {
       const response = await fetch(url, {
         headers: {
           Accept: "text/tab-separated-values",
-          "User-Agent": process.env.WIKIMEDIA_USER_AGENT ?? "wikitrip/0.1",
+          "User-Agent": process.env.WIKIMEDIA_USER_AGENT ?? "tripmaxing/0.1",
         },
       });
       if (response.ok && response.body) return response;

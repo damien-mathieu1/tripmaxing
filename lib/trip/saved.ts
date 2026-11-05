@@ -1,8 +1,8 @@
 import type { Coordinate } from "./path";
 import type { TripDay } from "./walking";
 
-const KEY = "wikitrip.trips";
-const CACHE_PREFIX = "wikitrip-trip-";
+const KEY = "tripmaxing.trips";
+const CACHE_PREFIX = "tripmaxing-trip-";
 const TILE_ZOOMS = [10, 11, 12, 13, 14];
 const DOWNLOADS_AT_ONCE = 6;
 

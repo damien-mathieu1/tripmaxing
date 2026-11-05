@@ -43,6 +43,6 @@ it("saves and deletes trips, newest first", async () => {
 });
 
 it("survives broken storage", () => {
-  store.set("wikitrip.trips", "{nope");
+  store.set("tripmaxing.trips", "{nope");
   expect(loadTrips()).toEqual([]);
 });

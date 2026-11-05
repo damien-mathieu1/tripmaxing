@@ -1,7 +1,7 @@
 """Collect geolocated Wikipedia articles around a city, enriched with views and Wikidata. Usage: python3 fetch.py Porto --lang pt"""
 import argparse, json, os, sys, time, urllib.parse, urllib.request
 
-UA = "wikitrip-prototype/0.1 (open-source travel planner prototype)"
+UA = "tripmaxing-prototype/0.1 (open-source travel planner prototype)"
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 SPARQL = "https://query.wikidata.org/sparql"
 

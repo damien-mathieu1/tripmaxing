@@ -75,7 +75,7 @@ def render(trip, t, city, lang, lat, lon):
     return TEMPLATE.replace("__DATA__", payload).replace("__T__", html.escape(str(t)))
 
 
-TEMPLATE = """<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>wikitrip</title>
+TEMPLATE = """<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>tripmaxing</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>body{margin:0;display:flex;height:100vh;font:15px system-ui,sans-serif}#side{width:340px;overflow:auto;padding:16px;box-sizing:border-box}

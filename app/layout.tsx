@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: messages.meta.title,
   description: messages.meta.description,
-  appleWebApp: { capable: true, title: "wikitrip", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "tripmaxing", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

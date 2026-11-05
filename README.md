@@ -1,10 +1,10 @@
-# wikitrip
+# tripmaxing
 
 Every geolocated Wikipedia article on a zoomable globe, and a trip engine that favours offbeat places.
 
-![wikitrip demo: searching Lyon on the globe, opening a place, then planning a trip and following the walker along real footpaths](docs/demo.gif)
+![tripmaxing demo: searching Lyon on the globe, opening a place, then planning a trip and following the walker along real footpaths](docs/demo.gif)
 
-Zoom from space to a street corner: 1.6 million places, the most viewed or rising ones first, with their photo. Pick one to read about it, or let wikitrip build a walking trip around a city with places tourists rarely see.
+Zoom from space to a street corner: 1.6 million places, the most viewed or rising ones first, with their photo. Pick one to read about it, or let tripmaxing build a walking trip around a city with places tourists rarely see.
 
 ## Features
 
@@ -140,7 +140,7 @@ Text from [Wikipedia](https://www.wikipedia.org) (CC BY-SA), photos from [Wikime
 
 Maps by [OpenFreeMap](https://openfreemap.org), [OpenStreetMap](https://www.openstreetmap.org/copyright), [OpenTopoMap](https://opentopomap.org) and [EOX Sentinel-2 cloudless](https://s2maps.eu) (CC BY-NC-SA, non-commercial). Walking routes by the [FOSSGIS OSM routing service](https://routing.openstreetmap.de).
 
-wikitrip is an independent project with no official link to the Wikimedia Foundation.
+tripmaxing is an independent project with no official link to the Wikimedia Foundation.
 
 ## License
 

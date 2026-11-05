@@ -3,8 +3,8 @@ import messages from "@/messages/fr.json";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "wikitrip",
-    short_name: "wikitrip",
+    name: "tripmaxing",
+    short_name: "tripmaxing",
     description: messages.meta.description,
     start_url: "/",
     display: "standalone",

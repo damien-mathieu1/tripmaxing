@@ -35,9 +35,13 @@ async function readMonth(month: string) {
   const url =
     `https://dumps.wikimedia.org/other/pageview_complete/monthly/${month.slice(0, 4)}/${month}/` +
     `pageviews-${month.replace("-", "")}-user.bz2`;
-  const curl = spawn("curl", ["-sSfL", "-A", process.env.WIKIMEDIA_USER_AGENT ?? "wikitrip", url], {
-    stdio: ["ignore", "pipe", "inherit"],
-  });
+  const curl = spawn(
+    "curl",
+    ["-sSfL", "-A", process.env.WIKIMEDIA_USER_AGENT ?? "tripmaxing", url],
+    {
+      stdio: ["ignore", "pipe", "inherit"],
+    },
+  );
   const bzip = spawn("bzcat", { stdio: ["pipe", "pipe", "ignore"] });
   curl.stdout.pipe(bzip.stdin);
   bzip.stdin.on("error", () => {}); // bzcat goes away when we stop early

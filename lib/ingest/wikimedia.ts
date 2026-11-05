@@ -8,7 +8,7 @@ const DEFAULT_RETRY_SECONDS = 300;
 
 export async function fetchJson<T>(url: string, timeoutMs = 30_000) {
   const response = await fetch(url, {
-    headers: { "User-Agent": process.env.WIKIMEDIA_USER_AGENT ?? "wikitrip/0.1" },
+    headers: { "User-Agent": process.env.WIKIMEDIA_USER_AGENT ?? "tripmaxing/0.1" },
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (response.status === 429 || response.status === 503) {
