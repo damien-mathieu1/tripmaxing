@@ -112,12 +112,14 @@ Walking times are estimates, and a place may be closed or have nothing left to s
 3. Fill the database. Run `pnpm import:places` and `pnpm import:views` with the same `DATABASE_URL`, or copy a database you already imported locally:
 
    ```bash
-   docker compose exec -T db pg_dump -U tripmaxing --data-only --table=places tripmaxing | docker compose exec -T db psql "<session pooler URL>"
+   docker compose exec -T db psql -U tripmaxing -d tripmaxing -c "copy (select * from places order by ST_GeoHash(geom, 10)) to stdout" | docker compose exec -T db psql "<session pooler URL>" -c "set statement_timeout = 0" -c "copy places from stdin"
    ```
+
+   Keep the sort: on a free database, a tile read 20 times more disk pages when neighbours were scattered, and timed out. Finish with `vacuum analyze places`.
 
 4. Import the repository in Vercel. Set `DATABASE_URL` to the transaction pooler URL, plus `CRON_SECRET`, `WIKI_LANGS` and `WIKIMEDIA_USER_AGENT`.
 5. In GitHub, set the `APP_URL` variable and the `CRON_SECRET` secret to enable refreshes.
-6. Optional: set the `ENABLE_IMPORT` variable to `true` and the `DATABASE_URL` secret (session pooler) to enable monthly imports. They rewrite the whole table, so the database can grow past 500 MB until the next vacuum.
+6. Optional: set the `ENABLE_IMPORT` variable to `true` and the `DATABASE_URL` secret (session pooler) to enable monthly imports. They rewrite the whole table, so the database can grow past 500 MB until the next vacuum. They also scatter rows again, which slows tiles down.
 
 ## Contributing
 
