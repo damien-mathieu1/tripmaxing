@@ -1,7 +1,7 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { BookmarkIcon, RouteIcon, TrendingUpIcon } from "lucide-react";
+import { BookmarkIcon, LoaderCircleIcon, RouteIcon, TrendingUpIcon } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -55,6 +55,13 @@ const PHOTO_WAIT_MS = 250;
 const PHOTO_SPACING_PX = 100;
 // Half the photo: its centre sits on the place, the name hangs below.
 const PHOTO_RADIUS_PX = 25;
+// Photos follow freshly loaded tiles instead of waiting for the whole map to settle.
+const PHOTO_DEBOUNCE_MS = 150;
+// The first "loading" toast waits for first photos, but never longer than this.
+const PHOTO_READY_MS = 2500;
+const LOADER_MAX_MS = 15_000;
+// Fast tiles never flash the "loading places" hint.
+const PINS_BUSY_DELAY_MS = 300;
 
 /** Lets the big photo arrive before the morph snapshot, without ever holding up a tap. */
 async function photoReady(image: HTMLImageElement | null) {
@@ -119,6 +126,8 @@ export function Globe() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [layer, setLayer] = useState<MapStyleId>("satellite");
   const [selected, setSelected] = useState<Pin | null>(null);
+  const [ready, setReady] = useState(false);
+  const [loadingPins, setLoadingPins] = useState(false);
   const [borders, setBorders] = useState<BorderId[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const stars = useMemo(() => `url("${starTile()}")`, []);
@@ -183,7 +192,7 @@ export function Globe() {
       attributionControl: { compact: true },
       // Phones have 3x screens: the extra pixels cost frames for no visible gain on a map.
       pixelRatio: Math.min(window.devicePixelRatio, 2),
-      fadeDuration: 100,
+      fadeDuration: 300,
       touchPitch: false,
       clickTolerance: 6,
     });
@@ -256,7 +265,7 @@ export function Globe() {
     map.on("mouseleave", "pins", clearHover);
 
     const photos = new Map<number, maplibregl.Marker>();
-    map.on("idle", () => {
+    const updatePhotos = () => {
       const pins = new Map<number, { pin: Pin; lngLat: [number, number] }>();
       if (map.getLayer("pins-query") && !tripActive.current) {
         const features = map.queryRenderedFeatures({ layers: ["pins-query"] });
@@ -306,9 +315,57 @@ export function Globe() {
         hiddenPins = key;
         hidePins(map, ids);
       }
+    };
+    let pending = 0;
+    const schedule = () => {
+      window.clearTimeout(pending);
+      pending = window.setTimeout(updatePhotos, PHOTO_DEBOUNCE_MS);
+    };
+    map.on("moveend", schedule);
+    map.on("sourcedata", (event) => {
+      if (event.sourceId === "places" && event.tile) schedule();
+    });
+    let busy = false;
+    let busyTimer = 0;
+    const trackPins = () => {
+      const now = Boolean(map.getSource("places")) && !map.isSourceLoaded("places");
+      if (now === busy) return;
+      busy = now;
+      window.clearTimeout(busyTimer);
+      if (now) busyTimer = window.setTimeout(() => setLoadingPins(true), PINS_BUSY_DELAY_MS);
+      else setLoadingPins(false);
+    };
+    map.on("dataloading", (event) => {
+      if (event.dataType === "source" && event.sourceId === "places") trackPins();
+    });
+    map.on("sourcedata", (event) => {
+      if (event.sourceId === "places") trackPins();
+    });
+    let revealed = false;
+    const reveal = async () => {
+      if (revealed) return;
+      revealed = true;
+      const images = [...photos.values()].flatMap(
+        (marker) => marker.getElement().querySelector("img") ?? [],
+      );
+      const wait = new Promise((resolve) => setTimeout(resolve, PHOTO_READY_MS));
+      await Promise.race([
+        Promise.all(images.map((image) => image.decode().catch(() => {}))),
+        wait,
+      ]);
+      setReady(true);
+    };
+    const fallback = window.setTimeout(() => setReady(true), LOADER_MAX_MS);
+    map.on("idle", () => {
+      trackPins();
+      updatePhotos();
+      void reveal();
     });
 
     return () => {
+      window.clearTimeout(pending);
+      window.clearTimeout(fallback);
+      window.clearTimeout(busyTimer);
       // remove() clears the URL hash, which would lose the position on the Strict Mode remount.
       const { hash } = window.location;
       map.remove();
@@ -379,6 +436,10 @@ export function Globe() {
         aria-hidden
       />
       <div ref={container} className="size-full" aria-label={t("map.label")} />
+      <div className="pins-loading" data-show={loadingPins || !ready} role="status">
+        <LoaderCircleIcon className="size-4 animate-spin" aria-hidden />
+        {t("map.loadingPlaces")}
+      </div>
       <SearchBar onPick={goTo} />
       <FiltersPanel
         open={filtersOpen}

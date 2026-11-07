@@ -5,6 +5,7 @@
   },
   "map": {
     "label": "Globe des articles Wikipédia",
+    "loadingPlaces": "Chargement des lieux…",
     "styles": {
       "label": "Fond de carte",
       "satellite": "Satellite",

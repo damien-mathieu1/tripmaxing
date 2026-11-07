@@ -1064,3 +1064,49 @@ main[data-trip="true"] .tool {
     animation: none !important;
   }
 }
+
+/* The marker element carries MapLibre's position transform: only its children animate. */
+.photo-pin > * {
+  animation: photo-pin-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 100%;
+}
+
+@keyframes photo-pin-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* A globe without pins looks broken: say that places are on their way, like a toast. */
+.pins-loading {
+  position: absolute;
+  bottom: 3.5rem;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  background: rgb(0 0 0 / 70%);
+  color: #fff;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.pins-loading[data-show="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-pin > * {
+    animation: none;
+  }
+}
